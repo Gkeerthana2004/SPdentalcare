@@ -227,6 +227,7 @@ async function handleLogin() {
       avatar: result.user.user_metadata?.avatar || '👨‍⚕️'
     };
     console.log('[Login] Success! User:', currentUser.name);
+    localStorage.removeItem('pd_logged_out');
     document.getElementById('loginErr').style.display = 'none';
     document.getElementById('sbDocName').textContent = currentUser.name;
     document.getElementById('sbDocRole').textContent = currentUser.role;
@@ -267,6 +268,7 @@ document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key
 
 async function doLogout() {
   currentUser = null;
+  localStorage.setItem('pd_logged_out', '1');
   if (SupabaseDB.isConfigured()) {
     try { await SupabaseDB.logout(); } catch (e) {}
   }
@@ -943,6 +945,13 @@ async function refreshAll() {
     await seedData();
   } catch (e) {
     console.error('Error initializing data:', e);
+  }
+
+  const loggedOut = localStorage.getItem('pd_logged_out');
+  if (loggedOut) {
+    localStorage.removeItem('pd_logged_out');
+    console.log('[Session] User previously logged out, showing login screen');
+    return;
   }
 
   try {

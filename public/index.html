@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SP Dental Care | Premium Dental Services</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/landing.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- HOLIDAY BANNER (site-wide) -->
+<div id="siteHolidayBanner" style="display:none;background:linear-gradient(135deg,#dc3545,#c82333);color:#fff;text-align:center;padding:10px 20px;font-size:13px;font-weight:500;position:relative;z-index:1001">
+  <span id="siteHolidayMsg">🎉 The clinic is closed today. Please choose another date to book.</span>
+  <span style="display:inline-flex;align-items:center;gap:6px;margin-left:12px">
+    <a href="#booking" style="color:#fff;text-decoration:underline;font-weight:600">📅 Book for another day</a>
+  </span>
+</div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#" class="logo">
+    <div class="logo-icon">🦷</div>
+    <span>SP Dental Care</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#doctors">Doctors</a></li>
+    <li><a href="#why">About</a></li>
+    <li><a href="#gallery">Gallery</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#booking" class="nav-cta">Book Appointment</a></li>
+    <li><a href="dashboard.html" class="nav-login" title="Doctor Login">🔐</a></li>
+  </ul>
+  <div class="hamburger" id="hamburger" role="button" aria-label="Toggle navigation menu" aria-expanded="false" tabindex="0">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav" id="mobileNav">
+  <button class="mobile-close" id="mobileClose">✕</button>
+  <a href="#services" onclick="closeMobileNav()">Services</a>
+  <a href="#doctors" onclick="closeMobileNav()">Doctors</a>
+  <a href="#why" onclick="closeMobileNav()">About</a>
+  <a href="#gallery" onclick="closeMobileNav()">Gallery</a>
+  <a href="#contact" onclick="closeMobileNav()">Contact</a>
+  <a href="#booking" onclick="closeMobileNav()" style="color:var(--teal)">Book Appointment</a>
+  <a href="dashboard.html" class="mobile-login" onclick="closeMobileNav()" title="Doctor Login">🔐 Doctor Login</a>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-badge">Since 2019</div>
+    <h1>
+      <em>SP Dental Care</em>
+      <em>Design Your Smile</em>
+      <strong>Starts Here.</strong>
+    </h1>
+    <p class="hero-desc">
+      Experience world-class dentistry with cutting-edge technology and a team that genuinely cares. From routine check-ups to complete smile transformations.
+    </p>
+    <div class="hero-actions">
+      <a href="#booking" class="btn-primary">📅 Book Appointment</a>
+      <a href="#services" class="btn-outline">Explore Services →</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num">10K<span>+</span></div>
+        <div class="stat-label">Happy Patients</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">11<span>+</span></div>
+        <div class="stat-label">Years Experience</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">4.9<span>★</span></div>
+        <div class="stat-label">Average Rating</div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-visual-wrapper">
+      <div class="hero-card-main">
+        <div class="tooth-icon">🦷</div>
+        <h3>SP Dental Care</h3>
+        <p>Premium Dental Services</p>
+      </div>
+      <div class="floating-card fc-1">
+        <div class="fc-stars">★★★★★</div>
+        <div class="fc-text">"Best dental experience!"</div>
+        <div class="fc-text" style="margin-top:4px; font-size:11px;">— Sarah K.</div>
+      </div>
+      <div class="floating-card fc-2" id="heroSlotCard">
+        <div class="fc-icon">🩺</div>
+        <div>
+          <div class="fc-bold">Next Slot Available</div>
+          <div class="fc-text" id="heroSlotText"><span class="fc-available"></span> Today, 2:30 PM</div>
+        </div>
+      </div>
+      <div class="floating-card fc-3">
+        <div class="fc-bold">👩‍⚕️ Dr. Saranya Available</div>
+          <div class="fc-text">General Surgeon · 15 yrs exp</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOOKING -->
+<section id="booking">
+  <div class="section-heading reveal">
+    <div class="section-tag">Easy Scheduling</div>
+    <h2 class="section-title">Book an <strong>Appointment</strong></h2>
+    <p class="section-desc" style="margin: 16px auto 0;">Get your appointment confirmed in under 2 minutes. Choose your service, pick a slot, and we'll see you soon!</p>
+  </div>
+  <div class="booking-layout">
+    <div class="reveal">
+      <div class="hours-card">
+        <h4>🕐 Clinic Hours</h4>
+        <div class="hours-row">
+          <span class="day">Monday – Sunday</span>
+          <span class="time">5:00 PM – 9:00 PM</span>
+        </div>
+      </div>
+      <div style="margin-top:28px">
+        <h3 class="how-it-works-title">How It Works</h3>
+        <div class="booking-steps">
+          <div class="booking-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>Select Your Service</h4>
+              <p>Choose from our range of dental treatments and tell us your main concern.</p>
+            </div>
+          </div>
+          <div class="booking-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>Choose Date & Doctor</h4>
+              <p>Pick your preferred time slot and preferred dentist from our team.</p>
+            </div>
+          </div>
+          <div class="booking-step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>Confirm & Receive</h4>
+              <p>Get an instant SMS & email confirmation with all appointment details.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOLIDAY BANNER -->
+    <div id="bookingHolidayMsg" style="display:none;align-items:center;gap:12px;background:linear-gradient(135deg,#fef3cd,#fff3cd);border:1px solid #ffc107;border-radius:12px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#856404">
+      <span style="font-size:22px">🎉</span>
+      <div><strong id="holidayMsgText">Today is a holiday</strong><br><span style="font-size:12px;opacity:0.8">Please select a different date to book your appointment.</span></div>
+    </div>
+
+    <!-- FORM -->
+    <div class="booking-form reveal" style="transition-delay:0.1s">
+      <div id="formContainer">
+        <div class="form-title">Book Your Visit <span>→</span></div>
+        <div class="form-progress">
+          <div class="progress-step active" id="ps1"></div>
+          <div class="progress-step" id="ps2"></div>
+          <div class="progress-step" id="ps3"></div>
+          <div class="progress-step" id="ps4"></div>
+        </div>
+
+        <!-- Step 1: Service -->
+        <div class="form-step active" id="step1">
+          <div class="form-group">
+            <label>Select Service *</label>
+            <div class="service-options" id="serviceOptions">
+              <div class="service-opt" data-val="General Check-up" onclick="selectOpt(this,'serviceOptions')">
+                <span class="opt-icon">🩺</span> General Check-up
+              </div>
+              <div class="service-opt" data-val="Scaling" onclick="selectOpt(this,'serviceOptions')">
+                <span class="opt-icon">🪥</span> Scaling
+              </div>
+              <div class="service-opt" data-val="Dental Filling" onclick="selectOpt(this,'serviceOptions')">
+                <span class="opt-icon">⚙️</span> Dental Filling
+              </div>
+              <div class="service-opt" data-val="Dental Implants" onclick="selectOpt(this,'serviceOptions')">
+                <span class="opt-icon">🔬</span> Dental Implants
+              </div>
+              <div class="service-opt" data-val="Root Canal" onclick="selectOpt(this,'serviceOptions')">
+                <span class="opt-icon">🛡️</span> Root Canal
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Any concerns? (Optional)</label>
+            <textarea class="form-control" id="concern" rows="3" placeholder="Describe your dental concern or what you'd like to discuss..." style="resize:none;"></textarea>
+          </div>
+          <div class="form-nav">
+            <span class="step-label">Step 1 of 4 · Service</span>
+            <button class="btn-next" onclick="nextStep(1)">Next →</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Date & Time -->
+        <div class="form-step" id="step2">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Preferred Date *</label>
+              <input type="date" class="form-control" id="apptDate">
+            </div>
+            <div class="form-group">
+              <label>Visit Type</label>
+              <select class="form-control" id="visitType">
+                <option value="First Visit">First Visit</option>
+                <option value="Follow-up">Follow-up</option>
+                <option value="Emergency">Emergency</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Available Time Slots *</label>
+            <div class="time-slots" id="timeSlots">
+              <div class="time-slot" onclick="selectSlot(this)">5:00 PM</div>
+              <div class="time-slot" onclick="selectSlot(this)">5:30 PM</div>
+              <div class="time-slot" onclick="selectSlot(this)">6:00 PM</div>
+              <div class="time-slot" onclick="selectSlot(this)">6:30 PM</div>
+              <div class="time-slot" onclick="selectSlot(this)">7:00 PM</div>
+              <div class="time-slot" onclick="selectSlot(this)">7:30 PM</div>
+              <div class="time-slot" onclick="selectSlot(this)">8:00 PM</div>
+              <div class="time-slot" onclick="selectSlot(this)">8:30 PM</div>
+              <div class="time-slot" onclick="selectSlot(this)">9:00 PM</div>
+            </div>
+          </div>
+          <div class="form-nav">
+            <button class="btn-back" onclick="prevStep(2)">← Back</button>
+            <span class="step-label">Step 2 of 4 · Schedule</span>
+            <button class="btn-next" onclick="nextStep(2)">Next →</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Doctor -->
+        <div class="form-step" id="step3">
+          <div class="form-group">
+            <label>Choose Your Doctor</label>
+            <div class="doctor-select-grid" id="doctorOptions">
+              <div class="doc-opt" data-val="Dr. Saranya Mohan" onclick="selectOpt(this,'doctorOptions')">
+                <span class="doc-av">👨‍⚕️</span>
+                <div class="doc-info"><strong>Dr. Saranya Mohan</strong><span>General surgeon</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="form-nav">
+            <button class="btn-back" onclick="prevStep(3)">← Back</button>
+            <span class="step-label">Step 3 of 4 · Doctor</span>
+            <button class="btn-next" onclick="nextStep(3)">Next →</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Personal Info -->
+        <div class="form-step" id="step4">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" class="form-control" id="fullName" placeholder="Your full name">
+            </div>
+            <div class="form-group">
+              <label>Age</label>
+              <input type="number" class="form-control" id="age" placeholder="Your age" min="1" max="120">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phone Number *</label>
+              <input type="tel" class="form-control" id="phone" placeholder="+91 XXXXX XXXXX">
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" class="form-control" id="email" placeholder="your@email.com">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Insurance Provider (Optional)</label>
+            <input type="text" class="form-control" id="insurance" placeholder="Star Health, Bajaj Allianz, etc.">
+          </div>
+          <div class="form-nav">
+            <button class="btn-back" onclick="prevStep(4)">← Back</button>
+            <span class="step-label">Step 4 of 4 · Details</span>
+            <button class="btn-next btn-booking" onclick="submitBooking()">✓ Confirm Booking</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="booking-success" id="bookingSuccess">
+        <div class="success-icon">✓</div>
+        <h3>Appointment Confirmed!</h3>
+        <p>Your booking request has been received. You'll get a confirmation SMS and email shortly.</p>
+        <div class="confirm-details" id="confirmDetails"></div>
+          <button class="btn-primary btn-full" onclick="resetBooking()">
+            Book Another Appointment
+          </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="services-header reveal">
+    <div>
+      <div class="section-tag">What We Offer</div>
+      <h2 class="section-title">Comprehensive <strong>Dental Services</strong></h2>
+      <p class="section-desc">State-of-the-art treatments tailored to your unique smile, delivered with precision and care.</p>
+    </div>
+    <a href="#booking" class="btn-primary">Book a Service →</a>
+  </div>
+  <div class="services-grid">
+    <div class="service-card reveal" style="transition-delay:0.05s">
+      <div class="service-icon">🩺</div>
+      <h3>General Check-up</h3>
+      <p>Comprehensive oral health examinations including digital X-rays, professional cleaning, and personalised care plans for lasting health.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.1s">
+      <div class="service-icon">🪥</div>
+      <h3>Scaling</h3>
+      <p>Professional removal of plaque and tartar deposits to prevent tooth decay, gum disease, and maintain a bright, healthy smile.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.15s">
+      <div class="service-icon">⚙️</div>
+      <h3>Dental Filling</h3>
+      <p>Tooth-colored resin or composite fillings that restore decayed teeth and maintain natural appearance with superior durability.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.2s">
+      <div class="service-icon">🔬</div>
+      <h3>Dental Implants</h3>
+      <p>Permanent tooth replacements that look, feel, and function exactly like your natural teeth, with titanium roots built to last a lifetime.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.25s">
+      <div class="service-icon">🛡️</div>
+      <h3>Root Canal Treatment</h3>
+      <p>Pain-free root canal treatments using rotary endodontics and 3D imaging for precise, comfortable outcomes and long-lasting results.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.3s">
+      <div class="service-icon">😁</div>
+      <h3>Orthodontics</h3>
+      <p>Modern braces and clear aligner systems to straighten your teeth discreetly and comfortably, no matter your age.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.35s">
+      <div class="service-icon">🧹</div>
+      <h3>Scaling & Root Planing (SRP)</h3>
+      <p>Deep cleaning treatment for gum disease that removes tartar and plaque buildup both above and below the gum line for optimal oral health.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.4s">
+      <div class="service-icon">👑</div>
+      <h3>Zirconia Crowns</h3>
+      <p>Premium all-ceramic crowns offering superior aesthetics and durability, perfect for visible teeth with exceptional biocompatibility.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.45s">
+      <div class="service-icon">🏆</div>
+      <h3>Metal Ceramic Crown</h3>
+      <p>Durable crowns combining metal strength with ceramic aesthetics, ideal for back teeth requiring both strength and appearance.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.5s">
+      <div class="service-icon">🦷</div>
+      <h3>Ceramic Braces</h3>
+      <p>Tooth-colored braces that are virtually invisible yet highly effective for straightening teeth with discreet orthodontic treatment.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.55s">
+      <div class="service-icon">⚡</div>
+      <h3>Metal Braces</h3>
+      <p>Traditional, highly effective braces using advanced technology for quick and reliable teeth straightening at affordable prices.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.6s">
+      <div class="service-icon">📍</div>
+      <h3>Clear Aligners</h3>
+      <p>Custom-made transparent aligners for discreet teeth straightening without wires or brackets, removable for easy cleaning.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.65s">
+      <div class="service-icon">👶</div>
+      <h3>Child Dental Care</h3>
+      <p>Specialized pediatric dentistry with kid-friendly approach, including preventive treatments, fillings, and oral health education.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.7s">
+      <div class="service-icon">🔧</div>
+      <h3>FLAP Surgery</h3>
+      <p>Advanced periodontal surgical procedure for treating severe gum disease and bone loss with tissue regeneration techniques.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.75s">
+      <div class="service-icon">⚕️</div>
+      <h3>Orthognathic Surgery</h3>
+      <p>Corrective jaw surgery to address severe bite problems and jaw misalignment, improving function and facial aesthetics.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.8s">
+      <div class="service-icon">🦷</div>
+      <h3>Impaction - Wisdom Tooth Removal</h3>
+      <p>Expert surgical extraction of impacted wisdom teeth with minimal discomfort, using advanced techniques for faster recovery.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.85s">
+      <div class="service-icon">🌉</div>
+      <h3>Fixed Partial Denture (FPD) - Bridging</h3>
+      <p>Custom-crafted dental bridges that restore your smile by replacing missing teeth with natural-looking, permanent fixed prosthetics.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.9s">
+      <div class="service-icon">😁</div>
+      <h3>Complete Denture</h3>
+      <p>Full arch dentures designed for perfect fit and natural aesthetics, restoring complete oral function and your confident smile.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.95s">
+      <div class="service-icon">💎</div>
+      <h3>Fixed Implant Supported Complete Denture</h3>
+      <p>Permanently fixed full-arch restoration supported by dental implants for unmatched stability, function, and natural appearance.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:1.0s">
+      <div class="service-icon">🔧</div>
+      <h3>Removable Implant Supported Overdenture</h3>
+      <p>Snap-on overdenture retained by implants offering superior retention and stability while remaining removable for easy cleaning.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DOCTORS -->
+<section id="doctors">
+  <div class="section-heading reveal">
+    <div class="section-tag">Meet The Team</div>
+    <h2 class="section-title">Our Expert <strong>Dentists</strong></h2>
+    <p class="section-desc" style="margin: 16px auto 0;">Highly trained specialists dedicated to providing exceptional care with warmth and expertise.</p>
+  </div>
+  <div class="doctors-grid">
+    <div class="doctor-card reveal" style="transition-delay:0.05s">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👨‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Saranya</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. Saranya Mohan</div>
+      <div class="doctor-spec">General Surgeon</div>
+      <div class="doctor-exp">BDS, MDS · 10 years experience</div>
+    </div>
+    <div class="doctor-card reveal" style="transition-delay:0.1s">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👩‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Poornima</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. Poornima Gopiraj</div>
+      <div class="doctor-spec">Orthodontist & Dento Facial Orthopediecs</div>
+      <div class="doctor-exp">BDS, MDS · 10 years experience</div>
+    </div>
+    <div class="doctor-card reveal" style="transition-delay:0.15s">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👨‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Syed</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. Syed Sulaiman</div>
+      <div class="doctor-spec">Root Canal Specialist & Pedodontist</div>
+      <div class="doctor-exp">MDS · 3 years experience</div>
+    </div>
+    <div class="doctor-card reveal" style="transition-delay:0.2s">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👩‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Lakshmi</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. Lakshmi Rathan</div>
+      <div class="doctor-spec">Oral & Maxillofacial Surgeon Implantologist</div>
+      <div class="doctor-exp">BDS, MDS · 8 years experience</div>
+    </div>
+    <div class="doctor-card reveal" style="transition-delay:0.25s">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👩‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Radhika</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. B. Radhika</div>
+      <div class="doctor-spec">Periodontist</div>
+      <div class="doctor-exp">BDS, MDS · 10 years experience</div>
+    </div>
+    <div class="doctor-card reveal" style="transition-delay:0.3s">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👨‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Ashik</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. Ashik Ahamed</div>
+      <div class="doctor-spec">Oral & Maxillofacial Surgeon & Implantologist</div>
+      <div class="doctor-exp">BDS, MDS · 3 years experience</div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY CHOOSE US -->
+<section id="why">
+  <div class="section-heading reveal">
+    <div class="section-tag">Why SP Dental Care</div>
+    <h2 class="section-title">Why <strong>Choose Us</strong></h2>
+    <p class="section-desc" style="margin: 16px auto 0;">We combine advanced technology with genuine compassion to deliver dental care that exceeds expectations.</p>
+  </div>
+  <div class="services-grid" style="max-width:1000px;margin:0 auto">
+    <div class="service-card reveal" style="transition-delay:0.05s">
+      <div class="service-icon">🏆</div>
+      <h3>11+ Years Experience</h3>
+      <p>Over a decade of trusted dental care serving thousands of happy patients across Chennai.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.1s">
+      <div class="service-icon">🔬</div>
+      <h3>Advanced Technology</h3>
+      <p>State-of-the-art equipment including digital X-rays, rotary endodontics, and 3D imaging for precision treatment.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.15s">
+      <div class="service-icon">👩‍⚕️</div>
+      <h3>Expert Specialist Team</h3>
+      <p>6 highly qualified specialists covering every branch of dentistry under one roof.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.2s">
+      <div class="service-icon">💰</div>
+      <h3>Affordable Premium Care</h3>
+      <p>World-class treatments at transparent, competitive prices with EMI options available.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.25s">
+      <div class="service-icon">⏰</div>
+      <h3>Flexible Evening Hours</h3>
+      <p>Open 5 PM to 9 PM daily including weekends, perfect for working professionals.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.3s">
+      <div class="service-icon">🛡️</div>
+      <h3>Patient Safety First</h3>
+      <p>Rigid sterilization protocols and international hygiene standards for your complete safety.</p>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="gallery">
+  <div class="section-heading reveal">
+    <div class="section-tag">Our Space</div>
+    <h2 class="section-title">Clinic <strong>Gallery</strong></h2>
+    <p class="section-desc" style="margin: 16px auto 0;">A warm, modern environment designed to make your dental visit a genuinely pleasant experience.</p>
+  </div>
+  <div class="gallery-grid reveal">
+    <div class="gallery-item">
+      <div class="gallery-bg g1">🏥</div>
+      <div class="gallery-overlay"><div class="gallery-caption">Main Reception & Waiting Area</div></div>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-bg g2">🦷</div>
+      <div class="gallery-overlay"><div class="gallery-caption">Treatment Suite A</div></div>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-bg g3">🔬</div>
+      <div class="gallery-overlay"><div class="gallery-caption">Digital X-Ray Lab</div></div>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-bg g4">😁</div>
+      <div class="gallery-overlay"><div class="gallery-caption">Cosmetic Dentistry Room</div></div>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-bg g5">🌿</div>
+      <div class="gallery-overlay"><div class="gallery-caption">Relaxation Lounge</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-heading reveal">
+    <div class="section-tag reveal">Get In Touch</div>
+      <h2 class="section-title reveal">Visit Us or <strong>Call Anytime</strong></h2>
+      <p class="section-desc reveal">We're always here to answer your questions and help you on your journey to a healthier smile.</p>
+  </div>
+  <div class="contact-layout">
+    <div>
+      <div class="contact-items">
+        <div class="contact-item reveal">
+          <div class="ci-icon">📍</div>
+          <div class="ci-text">
+            <h4>Our Location</h4>
+            <p><a href="https://maps.app.goo.gl/yggotZLo7CVqgWr48" target="_blank" class="contact-link">No 6, Bharathiyar St, Potheri<br>Kattankulathur, Tamil Nadu 603203</a></p>
+          </div>
+        </div>
+        <div class="contact-item reveal">
+          <div class="ci-icon">📞</div>
+          <div class="ci-text">
+            <h4>Phone & WhatsApp</h4>
+            <p>+91 91766 40037<br>+91 63805 08693</p>
+          </div>
+        </div>
+        <div class="contact-item reveal">
+          <div class="ci-icon">✉️</div>
+          <div class="ci-text">
+            <h4>Email Us</h4>
+            <p>spdentalcare2018@gmail.com</p>
+          </div>
+        </div>
+      </div>
+      <div class="map-container reveal">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.46!2d80.0425!3d12.8238!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a52f5e5e5e5!2sBharathiyar+St%2C+Potheri%2C+Kattankulathur%2C+Tamil+Nadu+603203!5e0!3m2!1sen!2sin!4v1700000000" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+      <div class="review-card reveal">
+        <div class="review-header">
+          <div class="review-stars">★★★★★</div>
+          <div class="review-source">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm5.23 11.23c0 .28-.22.5-.5.5H3.27c-.28 0-.5-.22-.5-.5V4.27c0-.28.22-.5.5-.5h9.46c.28 0 .5.22.5.5v6.96zm-7.46-1.27c0-.41.34-.75.75-.75s.75.34.75.75-.34.75-.75.75-.75-.34-.75-.75zm3.5 0c0-.41.34-.75.75-.75s.75.34.75.75-.34.75-.75.75-.75-.34-.75-.75zM6.5 7.5c0-.28.22-.5.5-.5s.5.22.5.5-.22.5-.5.5-.5-.22-.5-.5zm3 0c0-.28.22-.5.5-.5s.5.22.5.5-.22.5-.5.5-.5-.22-.5-.5zm3 0c0-.28.22-.5.5-.5s.5.22.5.5-.22.5-.5.5-.5-.22-.5-.5z" fill="#4285F4"/></svg>
+            Google Review
+          </div>
+        </div>
+        <div class="review-quote">"SP Dental Care gave me back my confidence. The veneers look absolutely natural and the whole process was so comfortable."</div>
+        <div class="review-author">
+          <div class="review-avatar">😊</div>
+          <div>
+            <div class="review-name">Meenakshi Sundaram</div>
+            <div class="review-loc">Chennai, Tamil Nadu</div>
+          </div>
+        </div>
+      </div>
+    </div>
+      <div class="contact-form-box reveal">
+      <h3>Send Us a Message</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" class="form-control" id="cf_name" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" class="form-control" id="cf_phone" placeholder="+91 XXXXX XXXXX">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" class="form-control" id="cf_email" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <label>Subject</label>
+        <select class="form-control" id="cf_subject">
+          <option>General Enquiry</option>
+          <option>Appointment Query</option>
+          <option>Treatment Info</option>
+          <option>Billing & Insurance</option>
+          <option>Feedback</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Message</label>
+        <textarea class="form-control" rows="4" id="cf_message" placeholder="How can we help you?" style="resize:none;"></textarea>
+      </div>
+      <button class="btn-gold" onclick="submitContactForm()">Send Message →</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-layout">
+    <div class="footer-brand">
+      <a href="#" class="logo">
+        <div class="logo-icon">🦷</div>
+        SP<span>Dental Care</span>
+      </a>
+      <p>Chennai's most trusted premium dental clinic. Delivering exceptional smiles through advanced care and technology since 2018.</p>
+      <div class="social-links" style="margin-top:24px;">
+        <a class="social-btn" href="#" title="Facebook">f</a>
+        <a class="social-btn" href="#" title="Instagram">📷</a>
+        <a class="social-btn" href="#" title="Twitter">𝕏</a>
+        <a class="social-btn" href="#" title="YouTube">▶</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Services</h4>
+      <ul>
+        <li><a href="#services">General Check-up</a></li>
+        <li><a href="#services">Scaling & Filling</a></li>
+        <li><a href="#services">Dental Implants</a></li>
+        <li><a href="#services">Root Canal Treatment</a></li>
+        <li><a href="#services">Orthodontics & Braces</a></li>
+        <li><a href="#services">Complete Denture</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="#doctors">Our Doctors</a></li>
+        <li><a href="#why">About Us</a></li>
+        <li><a href="#gallery">Gallery</a></li>
+        <li><a href="#booking">Book Appointment</a></li>
+        <li><a href="#contact">Contact Us</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Patient Info</h4>
+      <ul>
+        <li><a href="#">New Patient Guide</a></li>
+        <li><a href="#">Insurance Plans</a></li>
+        <li><a href="#">EMI Options</a></li>
+        <li><a href="#">Patient Rights</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 SP Dental Care. All rights reserved. NABH Accredited.</p>
+    <p>Made with ❤️ for healthier smiles in Chennai</p>
+  </div>
+</footer>
+
+<!-- SUPABASE SETUP NOTICE (shows if not configured) -->
+<div id="supabaseNotice" style="display:none; background:#1a1612; color:#F59E0B; padding:12px 24px; text-align:center; font-size:13px; border-bottom:1px solid rgba(245,158,11,0.3);">
+   ⚠️ <strong>Supabase not configured.</strong> Bookings will save locally. 
+   <a href="https://app.supabase.com" target="_blank" style="color:#2DD4BF; text-decoration:underline;">Create a project</a> 
+   and update <code>scripts/supabase-config.js</code> to enable database.
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-title" id="toastTitle"></div>
+  <div class="toast-msg" id="toastMsg"></div>
+</div>
+
+<!-- CHATBOT FLOATING BUTTON -->
+<div id="chatFab" onclick="toggleChat()" title="Book appointment with chat" role="button" aria-label="Open chat assistant" tabindex="0">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+  <span class="chat-fab-text">Chat</span>
+</div>
+
+<!-- CHATBOT WIDGET -->
+<div id="chatWidget">
+  <div id="chatHeader">
+    <div class="ch-av">🦷</div>
+    <div class="ch-info">
+      <div class="ch-title">SP Dental Care</div>
+      <div class="ch-status">Online · Book in 2 min</div>
+    </div>
+    <button class="ch-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div id="chatBody"></div>
+</div>
+
+<!-- WHATSAPP FLOATING BUTTON -->
+<a id="whatsappBtn" href="https://wa.me/919176640037?text=Hi%20SP%20Dental%20Care!%20I%27d%20like%20to%20know%20more%20about%20your%20services." target="_blank" class="whatsapp-btn" title="Chat with us on WhatsApp" aria-label="WhatsApp">
+  <svg viewBox="0 0 32 32" fill="white" width="28" height="28"><path d="M16.004 0h-.008C7.172 0 0 7.172 0 16c0 3.348 1.03 6.457 2.793 9.039L1.082 31.18l6.387-1.668A15.93 15.93 0 0 0 16.004 32C24.828 32 32 24.828 32 16S24.828 0 16.004 0zm9.422 22.594c-.43 1.21-2.136 2.234-3.5 2.535-.93.207-2.152.363-6.273-1.348-5.266-2.188-8.664-7.543-8.926-7.887-.27-.352-2.129-2.836-2.129-5.41 0-2.574 1.352-3.844 1.83-4.367.477-.524 1.043-.66 1.39-.66.348 0 .696.004 1 .031.32.027.754-.122 1.18.903.43 1.035 1.46 3.582 1.59 3.84.13.258.215.562.043.907-.172.344-.258.559-.516.863-.259.304-.543.676-.777.91-.259.258-.528.539-.226 1.055.303.516 1.344 2.219 2.883 3.59 1.98 1.766 3.648 2.313 4.168 2.574.52.261.824.215 1.129-.129.304-.344 1.293-1.5 1.637-2.016.344-.516.688-.43 1.164-.258.477.172 3.008 1.418 3.523 1.676.516.258.86.387.988.601.129.215.129 1.234-.301 2.445z"/></svg>
+  <span class="whatsapp-text">Chat with us</span>
+</a>
+
+<script>
+// Show notice if Supabase is not configured
+window.addEventListener('load', () => {
+  if (window.SupabaseDB && !SupabaseDB.isConfigured()) {
+    document.getElementById('supabaseNotice').style.display = 'block';
+  }
+});
+</script>
+
+  <script src="js/supabase-config.js?v=5.0"></script>
+  <script src="js/supabase.js?v=5.0"></script>
+  <script src="js/landing.js?v=5.0"></script>
+  <script src="js/chatbot.js?v=1.0"></script>
+</body>
+</html>

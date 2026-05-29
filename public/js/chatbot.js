@@ -1,0 +1,262 @@
+const chatServices = [
+  'General Check-up', 'Scaling', 'Dental Filling', 'Dental Implants',
+  'Root Canal', 'Orthodontics', 'Ceramic Braces', 'Metal Braces',
+  'Clear Aligners', 'Child Dental Care', 'Wisdom Tooth Removal'
+];
+
+const chatDoctors = [
+  'Dr. Saranya Mohan', 'Dr. Poornima Gopiraj', 'Dr. Syed Sulaiman',
+  'Dr. Lakshmi Rathan', 'Dr. B. Radhika', 'Dr. Ashik Ahamed', 'Any Available'
+];
+
+const chatTimes = ['5:00 PM','5:30 PM','6:00 PM','6:30 PM','7:00 PM','7:30 PM','8:00 PM','8:30 PM','9:00 PM'];
+
+let chatState = { step: 0, data: {} };
+
+function toggleChat() {
+  const el = document.getElementById('chatWidget');
+  el.classList.toggle('open');
+  if (el.classList.contains('open') && !chatState.step) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const holiday = (typeof isHoliday === 'function' && isHoliday(todayStr))
+      ? (JSON.parse(localStorage.getItem('pd_holidays')||'[]')).find(h => h.date === todayStr)
+      : null;
+    if (holiday) {
+      setTimeout(() => addChatMsg('bot', '\uD83C\uDF89 <b>Notice:</b> The clinic is closed today' + (holiday.reason ? ' (' + htmlEscape(holiday.reason) + ')' : '') + '.<br>Please select a different date to book.'), 300);
+      setTimeout(() => addChatMsg('bot', 'What service are you looking for?'), 900);
+      setTimeout(() => showChatOptions(chatServices, 'service'), 1400);
+    } else {
+      setTimeout(() => addChatMsg('bot', '\uD83D\uDC4B Hello! Welcome to <b>SP Dental Care</b>.<br>I\'ll help you book an appointment in just a few steps.'), 300);
+      setTimeout(() => addChatMsg('bot', 'What service are you looking for?'), 800);
+      setTimeout(() => showChatOptions(chatServices, 'service'), 1300);
+    }
+    chatState.step = 1;
+  }
+}
+
+function addChatMsg(who, text) {
+  const body = document.getElementById('chatBody');
+  const d = document.createElement('div');
+  d.className = 'chat-msg ' + who;
+  d.innerHTML = text;
+  body.appendChild(d);
+  body.scrollTop = body.scrollHeight;
+}
+
+function showChatOptions(options, key) {
+  const body = document.getElementById('chatBody');
+  const d = document.createElement('div');
+  d.className = 'chat-options';
+  options.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'chat-opt-btn';
+    b.textContent = opt;
+    b.onclick = () => handleChatChoice(key, opt);
+    d.appendChild(b);
+  });
+  body.appendChild(d);
+  body.scrollTop = body.scrollHeight;
+}
+
+function showChatDatePicker() {
+  const body = document.getElementById('chatBody');
+  const d = document.createElement('div');
+  d.className = 'chat-options';
+  const inp = document.createElement('input');
+  inp.type = 'date';
+  inp.className = 'chat-date-inp';
+  const todayDate = new Date();
+  inp.min = todayDate.toISOString().split('T')[0];
+  const todayStr = todayDate.toISOString().split('T')[0];
+  if (typeof isHoliday === 'function' && isHoliday(todayStr)) {
+    const next = new Date(todayDate); next.setDate(next.getDate() + 1);
+    inp.value = next.toISOString().split('T')[0];
+  } else {
+    inp.value = todayStr;
+  }
+  const btn = document.createElement('button');
+  btn.className = 'chat-opt-btn';
+  btn.textContent = '\u2713 Select Date';
+  btn.onclick = () => {
+    if (!inp.value) return;
+    if (typeof isHoliday === 'function' && isHoliday(inp.value)) {
+      addChatMsg('bot', '\u274C <b>Closure Notice</b><br>Sorry, the clinic is closed on this date. Please pick another day.');
+      inp.value = '';
+      return;
+    }
+    handleChatChoice('date', inp.value);
+  };
+  d.appendChild(inp);
+  d.appendChild(btn);
+  body.appendChild(d);
+  body.scrollTop = body.scrollHeight;
+}
+
+function showChatTimeSlots() {
+  const body = document.getElementById('chatBody');
+  const d = document.createElement('div');
+  d.className = 'chat-options';
+  const booked = new Set();
+  try {
+    const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
+    local.filter(a => a.date === chatState.data.date).forEach(a => booked.add(a.time));
+  } catch (e) {}
+  chatTimes.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'chat-opt-btn' + (booked.has(t) ? ' disabled' : '');
+    b.textContent = t;
+    if (!booked.has(t)) b.onclick = () => handleChatChoice('time', t);
+    d.appendChild(b);
+  });
+  body.appendChild(d);
+  body.scrollTop = body.scrollHeight;
+}
+
+function showChatNameInput() {
+  const body = document.getElementById('chatBody');
+  const d = document.createElement('div');
+  d.className = 'chat-options';
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = 'chat-text-inp';
+  inp.placeholder = 'Your full name...';
+  const btn = document.createElement('button');
+  btn.className = 'chat-opt-btn';
+  btn.textContent = '\u2713 Next';
+  btn.onclick = () => {
+    const v = inp.value.trim();
+    if (v) { handleChatChoice('name', v); }
+    else { inp.style.borderColor = '#e74c3c'; }
+  };
+  d.appendChild(inp);
+  d.appendChild(btn);
+  body.appendChild(d);
+  body.scrollTop = body.scrollHeight;
+  setTimeout(() => inp.focus(), 100);
+}
+
+function showChatPhoneInput() {
+  const body = document.getElementById('chatBody');
+  const d = document.createElement('div');
+  d.className = 'chat-options';
+  const inp = document.createElement('input');
+  inp.type = 'tel';
+  inp.className = 'chat-text-inp';
+  inp.placeholder = '+91 XXXXX XXXXX';
+  const btn = document.createElement('button');
+  btn.className = 'chat-opt-btn';
+  btn.textContent = '\u2713 Book Now';
+  btn.onclick = () => {
+    const v = inp.value.trim();
+    if (v) { handleChatChoice('phone', v); }
+    else { inp.style.borderColor = '#e74c3c'; }
+  };
+  d.appendChild(inp);
+  d.appendChild(btn);
+  body.appendChild(d);
+  body.scrollTop = body.scrollHeight;
+  setTimeout(() => inp.focus(), 100);
+}
+
+async function handleChatChoice(key, value) {
+  chatState.data[key] = value;
+  addChatMsg('user', htmlEscape(value));
+
+  if (key === 'service') {
+    setTimeout(() => addChatMsg('bot', 'Great choice! ' + (value === 'Orthodontics' ? '\uD83D\uDE01 ' : '') + 'Now, pick your preferred date.'), 400);
+    setTimeout(() => showChatDatePicker(), 900);
+    chatState.step = 2;
+  } else if (key === 'date') {
+    const d = new Date(value + 'T00:00:00');
+    const formatted = d.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    chatState.data.dateDisplay = formatted;
+    setTimeout(() => addChatMsg('bot', '\uD83D\uDCC5 <b>' + htmlEscape(formatted) + '</b> \u2014 great! Now choose a time slot:'), 400);
+    setTimeout(() => showChatTimeSlots(), 900);
+    chatState.step = 3;
+  } else if (key === 'time') {
+    setTimeout(() => addChatMsg('bot', '\u23F0 <b>' + htmlEscape(value) + '</b> \u2014 perfect! Who would you like to see?'), 400);
+    setTimeout(() => showChatOptions(chatDoctors, 'doctor'), 900);
+    chatState.step = 4;
+  } else if (key === 'doctor') {
+    setTimeout(() => addChatMsg('bot', '\uD83D\uDC68\u200D\u2695\uFE0F <b>' + htmlEscape(value) + '</b> \u2014 excellent choice! What\'s your name?'), 400);
+    setTimeout(() => showChatNameInput(), 900);
+    chatState.step = 5;
+  } else if (key === 'name') {
+    setTimeout(() => addChatMsg('bot', 'Nice to meet you, <b>' + htmlEscape(value) + '</b>! Last step \u2014 your phone number:'), 400);
+    setTimeout(() => showChatPhoneInput(), 900);
+    chatState.step = 6;
+  } else if (key === 'phone') {
+    addChatMsg('bot', '\u23F3 Booking your appointment...');
+    await submitChatBooking();
+  }
+}
+
+async function submitChatBooking() {
+  try {
+    checkRateLimit();
+    const d = chatState.data;
+    const id = 'APT-' + crypto.randomUUID().slice(0, 8);
+    const apt = {
+      id, name: sanitizeName(d.name), phone: sanitizePhone(d.phone), email: '', age: null,
+      date: d.date, time: d.time, service: d.service,
+      doctor: d.doctor, status: 'Pending', visittype: 'First Visit',
+      notes: '', created: new Date().toISOString()
+    };
+
+    let savedRemote = false;
+    if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
+      try {
+        await SupabaseDB.addAppointment(apt);
+        savedRemote = true;
+      } catch (e) { console.warn('Chat Supabase save failed:', e); }
+    }
+
+    const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
+    local.unshift(apt);
+    localStorage.setItem('pd_appointments', JSON.stringify(local));
+
+    const existing = JSON.parse(localStorage.getItem('pd_patients') || '[]');
+    if (!existing.find(p => p.phone === d.phone)) {
+      existing.unshift({ id:'PD-'+crypto.randomUUID().slice(0, 8), name:sanitizeName(d.name), phone:sanitizePhone(d.phone), email:'', treatment:d.service, doctor:d.doctor, notes:'', created:new Date().toISOString() });
+      localStorage.setItem('pd_patients', JSON.stringify(existing));
+    }
+
+    document.querySelectorAll('.chat-options').forEach(el => el.remove());
+
+    const body = document.getElementById('chatBody');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-msg bot';
+    msgDiv.innerHTML = '\u2705 <b>Appointment Confirmed!</b><br><br><b>#' + htmlEscape(id) + '</b><br>\uD83D\uDCC5 ' + htmlEscape(d.dateDisplay || d.date) + '<br>\u23F0 ' + htmlEscape(d.time) + '<br>\uD83C\uDFE5 ' + htmlEscape(d.service) + '<br>\uD83D\uDC68\u200D\u2695\uFE0F ' + htmlEscape(d.doctor) + '<br>\uD83D\uDC64 ' + htmlEscape(d.name) + '<br><br>See you at the clinic! \uD83D\uDE0A';
+    body.appendChild(msgDiv);
+
+    const optDiv = document.createElement('div');
+    optDiv.className = 'chat-options';
+    const btn1 = document.createElement('button');
+    btn1.className = 'chat-opt-btn';
+    btn1.textContent = '\uD83D\uDD04 Book Another';
+    btn1.onclick = resetChat;
+    optDiv.appendChild(btn1);
+    const btn2 = document.createElement('button');
+    btn2.className = 'chat-opt-btn';
+    btn2.textContent = '\u2715 Close';
+    btn2.onclick = toggleChat;
+    optDiv.appendChild(btn2);
+    body.appendChild(optDiv);
+
+    body.scrollTop = body.scrollHeight;
+    chatState.step = 0;
+  } catch (e) {
+    addChatMsg('bot', '\u274C Sorry, something went wrong. ' + htmlEscape(e.message || 'Please try again.'));
+    console.error('Chat booking error:', e);
+  }
+}
+
+function resetChat() {
+  chatState = { step: 0, data: {} };
+  document.getElementById('chatBody').innerHTML = '';
+  const el = document.getElementById('chatWidget');
+  if (el.classList.contains('open')) {
+    el.classList.remove('open');
+  }
+  setTimeout(() => toggleChat(), 100);
+}

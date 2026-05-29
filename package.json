@@ -1,0 +1,29 @@
+{
+  "name": "sp-dental-care",
+  "version": "1.0.0",
+  "description": "SP Dental Care - Landing page with appointment booking + Admin portal",
+  "main": "index.html",
+  "scripts": {
+    "prestart": "node scripts/generate-supabase-config.js",
+    "start": "node -e \"require('live-server').start({port:8080,root:require('path').resolve('public'),open:false,wait:100})\"",
+    "gen-config": "node scripts/generate-supabase-config.js",
+    "seed": "node db/seed-doctors.js",
+    "db-setup": "node db/create-tables.js"
+  },
+  "keywords": [
+    "dental",
+    "clinic",
+    "booking",
+    "supabase"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.3",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

@@ -1,0 +1,300 @@
+const SUPABASE_URL = window.SUPABASE_CONFIG?.SUPABASE_URL;
+const SUPABASE_ANON_KEY = window.SUPABASE_CONFIG?.SUPABASE_ANON_KEY;
+const CLINIC_WHATSAPP = '919176640037';
+
+let supabaseClient = null;
+let isSupabaseConfigured = false;
+let currentSession = null;
+
+function htmlEscape(str) {
+  if (str == null) return '';
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(String(str)));
+  return div.innerHTML;
+}
+
+function sanitizePhone(val) {
+  return String(val || '').replace(/[^\d+\-\s()]/g, '').trim();
+}
+
+function sanitizeEmail(val) {
+  const v = String(val || '').trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? v : '';
+}
+
+function sanitizeName(val) {
+  return String(val || '').replace(/[<>"'&]/g, '').trim().slice(0, 100);
+}
+
+function validateRequired(val, label) {
+  if (!val || !String(val).trim()) {
+    throw new Error(label + ' is required');
+  }
+  return String(val).trim();
+}
+
+let bookingTimestamps = [];
+function checkRateLimit(maxPerMinute = 5) {
+  const now = Date.now();
+  bookingTimestamps = bookingTimestamps.filter(t => now - t < 60000);
+  if (bookingTimestamps.length >= maxPerMinute) {
+    throw new Error('Too many requests. Please wait a moment and try again.');
+  }
+  bookingTimestamps.push(now);
+}
+
+const hasValidSupabaseUrl = typeof SUPABASE_URL === 'string' && SUPABASE_URL.includes('.supabase.co');
+const hasValidAnonKey = typeof SUPABASE_ANON_KEY === 'string' && SUPABASE_ANON_KEY !== '';
+
+if (hasValidSupabaseUrl && hasValidAnonKey) {
+  try {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true
+      }
+    });
+    isSupabaseConfigured = true;
+    console.log('Supabase client initialized');
+  } catch (e) {
+    console.warn('Supabase init failed:', e.message);
+  }
+} else {
+  console.warn('Supabase not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env');
+}
+
+async function initSession() {
+  if (!supabaseClient) return null;
+  const { data } = await supabaseClient.auth.getSession();
+  currentSession = data?.session || null;
+  return currentSession;
+}
+
+async function doLogin(email, password) {
+  if (!supabaseClient) throw new Error('Supabase not configured');
+  const resp = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (resp.error) throw resp.error;
+  let session = resp.data?.session || null;
+  let user = resp.data?.user || null;
+  if (!session && !user) {
+    const sd = await supabaseClient.auth.getSession();
+    session = sd?.data?.session || null;
+    user = session?.user || null;
+  }
+  if (!user && session) user = session.user;
+  currentSession = session;
+  return { user, session };
+}
+
+async function doLogout() {
+  if (!supabaseClient) return;
+  try {
+    await supabaseClient.auth.signOut();
+  } catch (e) {
+    console.warn('Logout error:', e.message);
+  }
+  currentSession = null;
+}
+
+function getSession() {
+  return currentSession;
+}
+
+function getAuthHeader() {
+  if (currentSession?.access_token) {
+    return { Authorization: 'Bearer ' + currentSession.access_token };
+  }
+  return {};
+}
+
+const SupabaseDB = {
+  async getPatients() {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('patients').select('*').order('created', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addPatient(patient) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const sanitized = {
+      id: patient.id,
+      name: sanitizeName(patient.name),
+      dob: patient.dob || null,
+      gender: patient.gender || null,
+      blood: patient.blood || null,
+      phone: sanitizePhone(patient.phone),
+      email: sanitizeEmail(patient.email),
+      address: String(patient.address || '').trim(),
+      treatment: String(patient.treatment || '').trim(),
+      doctor: String(patient.doctor || '').trim(),
+      history: String(patient.history || '').trim(),
+      notes: String(patient.notes || '').trim(),
+      created: patient.created || new Date().toISOString()
+    };
+    const { data, error } = await supabaseClient.from('patients').upsert([sanitized], { onConflict: 'id' }).select();
+    if (error) throw error;
+    return data?.[0];
+  },
+
+  async updatePatient(id, updates) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('patients').update(updates).eq('id', id).select();
+    if (error) throw error;
+    return data?.[0];
+  },
+
+  async getAppointments() {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('appointments').select('*').order('created', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addAppointment(appointment) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const sanitized = {
+      id: appointment.id,
+      name: sanitizeName(appointment.name),
+      phone: sanitizePhone(appointment.phone),
+      email: sanitizeEmail(appointment.email),
+      age: appointment.age || null,
+      date: appointment.date,
+      time: String(appointment.time || '').trim(),
+      service: String(appointment.service || '').trim(),
+      doctor: String(appointment.doctor || '').trim(),
+      status: appointment.status || 'Pending',
+      visittype: String(appointment.visittype || '').trim(),
+      notes: String(appointment.notes || '').trim(),
+      created: appointment.created || new Date().toISOString()
+    };
+    const { data, error } = await supabaseClient.from('appointments').upsert([sanitized], { onConflict: 'id' }).select();
+    if (error) throw error;
+    return data?.[0];
+  },
+
+  async updateAppointment(id, updates) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('appointments').update(updates).eq('id', id).select();
+    if (error) throw error;
+    return data?.[0];
+  },
+
+  async deleteAppointment(id) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { error } = await supabaseClient.from('appointments').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async getOrthodontics() {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('orthodontics').select('*').order('start', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addOrthodonticCase(orthoCase) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('orthodontics').upsert([orthoCase], { onConflict: 'id' }).select();
+    if (error) throw error;
+    return data?.[0];
+  },
+
+  async updateOrthodonticCase(id, updates) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('orthodontics').update(updates).eq('id', id).select();
+    if (error) throw error;
+    return data?.[0];
+  },
+
+  async deleteOrthodonticCase(id) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { error } = await supabaseClient.from('orthodontics').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async getOPGReports() {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('opg_reports').select('*').order('date', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getOPGReportsByPatient(pid) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('opg_reports').select('*').eq('pid', pid).order('date', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getOPGReportsByOrtho(orthoId) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('opg_reports').select('*').eq('ortho_id', orthoId).order('date', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addOPGReport(report) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('opg_reports').upsert([report], { onConflict: 'id' }).select();
+    if (error) throw error;
+    return data?.[0];
+  },
+
+  async deleteOPGReport(id) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { error } = await supabaseClient.from('opg_reports').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async deletePatient(id) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { error } = await supabaseClient.from('patients').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  isConfigured() {
+    return isSupabaseConfigured;
+  },
+
+  getClient() {
+    return supabaseClient;
+  },
+
+  async login(email, password) {
+    return doLogin(email, password);
+  },
+
+  async logout() {
+    return doLogout();
+  },
+
+  getSession() {
+    return currentSession;
+  }
+};
+
+function getHolidays() {
+  try { return JSON.parse(localStorage.getItem('pd_holidays') || '[]'); } catch { return []; }
+}
+function isHoliday(dateStr) {
+  return getHolidays().some(h => h.date === dateStr);
+}
+window.getHolidays = getHolidays;
+window.isHoliday = isHoliday;
+
+window.SupabaseDB = SupabaseDB;
+window.htmlEscape = htmlEscape;
+window.sanitizeName = sanitizeName;
+window.sanitizePhone = sanitizePhone;
+window.sanitizeEmail = sanitizeEmail;
+window.validateRequired = validateRequired;
+window.checkRateLimit = checkRateLimit;
+window.CLINIC_WHATSAPP = CLINIC_WHATSAPP;
+window.initSession = initSession;
+window.getSession = getSession;
+
+window.supabaseClient = supabaseClient;
+
+initSession().catch(e => console.warn('Session init error:', e.message));
+console.log('SupabaseDB initialized. Configured:', SupabaseDB.isConfigured());

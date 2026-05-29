@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SP Dental Care - Doctor Portal</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>if(typeof lucide!=='undefined') lucide.createIcons();</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- ══════════ LOGIN SCREEN ══════════ -->
+<div id="loginScreen">
+  <div class="login-bg">
+    <div class="login-orb login-orb-1"></div>
+    <div class="login-orb login-orb-2"></div>
+    <div class="login-orb login-orb-3"></div>
+    <div class="login-grid"></div>
+  </div>
+  <div class="login-box">
+    <div class="login-brand">
+      <div class="login-logo-icon">
+        <i data-lucide="smile"></i>
+      </div>
+      <div class="login-brand-text">
+        <div class="login-brand-name">SP<span>Dental Care</span></div>
+        <div class="login-brand-tag">Premium Dental Services</div>
+      </div>
+    </div>
+
+    <div class="login-welcome">
+      <h2>Welcome Back</h2>
+      <p>Sign in to access your doctor portal</p>
+    </div>
+
+    <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();" novalidate>
+      <div class="login-field">
+        <label for="loginUser">Email Address</label>
+        <div class="login-input-wrap">
+          <i data-lucide="mail" class="login-input-icon"></i>
+          <input class="login-input" type="email" id="loginUser" placeholder="doctor@spdental.com" autocomplete="email" required>
+          <div class="login-input-focus"></div>
+        </div>
+      </div>
+
+      <div class="login-field">
+        <label for="loginPass">Password</label>
+        <div class="login-input-wrap">
+          <i data-lucide="lock" class="login-input-icon"></i>
+          <input class="login-input" type="password" id="loginPass" placeholder="Enter your password" autocomplete="current-password" required>
+          <button type="button" class="login-pass-toggle" onclick="togglePasswordVisibility()" tabindex="-1" aria-label="Toggle password visibility">
+            <i data-lucide="eye" id="passToggleIcon"></i>
+          </button>
+          <div class="login-input-focus"></div>
+        </div>
+      </div>
+
+      <div class="login-options">
+        <label class="login-checkbox">
+          <input type="checkbox" id="rememberMe">
+          <span class="login-checkmark"></span>
+          <span>Remember me</span>
+        </label>
+        <a href="#" class="login-forgot" onclick="toast('info','Reset Password','Contact your administrator to reset your password')">Forgot password?</a>
+      </div>
+
+      <div class="login-err" id="loginErr">
+        <i data-lucide="alert-circle"></i>
+        <span id="loginErrText">Incorrect credentials. Please try again.</span>
+      </div>
+
+      <button type="submit" class="login-btn" id="loginBtn">
+        <span class="login-btn-text">Sign In to Portal</span>
+        <span class="login-btn-loader" style="display:none">
+          <span class="login-spinner"></span>
+        </span>
+        <i data-lucide="arrow-right" class="login-btn-arrow"></i>
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <div class="login-security">
+        <i data-lucide="shield-check"></i>
+        <span>Secured with Supabase Auth</span>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ DASHBOARD ══════════ -->
+<div id="dashboard">
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+      <div class="sb-logo">
+        <div class="logo-gem" style="width:34px;height:34px;font-size:18px;border-radius:10px;"><i data-lucide="smile"></i></div>
+        SP<span>Dental Care</span>
+      </div>
+    <div class="sb-doctor-info">
+      <div class="sb-avatar" id="sbAvatar"><i data-lucide="heart-pulse"></i></div>
+      <div>
+       <div class="sb-doc-name" id="sbDocName">Dr. Saranya Mohan</div>
+       <div class="sb-doc-role" id="sbDocRole">General Surgeon</div>
+        <div class="sb-online">Online</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Main</div>
+      <a class="sb-item active" onclick="showPage('overview',this)">
+        <span class="si-icon"><i data-lucide="layout-dashboard"></i></span> Overview
+      </a>
+      <a class="sb-item" onclick="showPage('appointments',this)">
+        <span class="si-icon"><i data-lucide="calendar"></i></span> Appointments
+        <span class="sb-badge" id="apptBadge">0</span>
+      </a>
+      <div class="sb-section">Patients</div>
+      <a class="sb-item" onclick="showPage('patients',this)">
+        <span class="si-icon"><i data-lucide="users"></i></span> All Patients
+      </a>
+      <a class="sb-item" onclick="showPage('ortho',this)">
+        <span class="si-icon"><i data-lucide="smile"></i></span> Ortho Treatment
+        <span class="sb-badge" id="orthoBadge">0</span>
+      </a>
+      <div class="sb-section">Tools</div>
+      <a class="sb-item" onclick="showPage('add-patient',this)">
+        <span class="si-icon"><i data-lucide="user-plus"></i></span> Add Patient
+      </a>
+      <a class="sb-item" onclick="showPage('holidays',this)">
+        <span class="si-icon"><i data-lucide="calendar-x"></i></span> Clinic Holidays
+      </a>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-logout" onclick="doLogout()">
+        <span style="font-size:18px;"><i data-lucide="log-out"></i></span> Sign Out
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="pageTitle">Overview <span>Dashboard</span></div>
+      <div class="topbar-right">
+        <a href="index.html" class="topbar-home" title="Back to Home"><i data-lucide="home"></i> Home</a>
+        <div class="topbar-date" id="topbarDate"></div>
+        <div class="notif-btn" onclick="toast('🔔','Notifications','No new notifications')"><i data-lucide="bell"></i><div class="notif-dot"></div></div>
+      </div>
+    </div>
+
+    <!-- ── OVERVIEW ── -->
+    <div class="page active" id="page-overview">
+      <div class="stat-cards">
+        <div class="stat-card" style="--accent:var(--teal)">
+          <div class="sc-icon"><i data-lucide="calendar"></i></div>
+          <div class="sc-val" id="ovAppts">0</div>
+          <div class="sc-lbl">Today's Appointments</div>
+          <div class="sc-change up" id="ovApptChg">↑ Loading...</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--blue)">
+          <div class="sc-icon"><i data-lucide="users"></i></div>
+          <div class="sc-val" id="ovPatients">0</div>
+          <div class="sc-lbl">Total Patients</div>
+          <div class="sc-change up">↑ All time</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--gold)">
+          <div class="sc-icon"><i data-lucide="smile"></i></div>
+          <div class="sc-val" id="ovOrtho">0</div>
+          <div class="sc-lbl">Active Ortho Cases</div>
+          <div class="sc-change up">↑ Ongoing</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--green)">
+          <div class="sc-icon"><i data-lucide="check"></i></div>
+          <div class="sc-val" id="ovCompleted">0</div>
+          <div class="sc-lbl">Completed Today</div>
+          <div class="sc-change up">↑ This session</div>
+        </div>
+      </div>
+
+      <div class="sec-hdr">
+        <h2>Today's <span>Schedule</span></h2>
+        <button class="btn btn-teal" onclick="showPage('appointments',document.querySelector('.sb-item[onclick*=appointments]'))">View All →</button>
+      </div>
+      <div class="table-wrap" style="margin-bottom:28px">
+        <table>
+          <thead><tr>
+            <th>Time</th><th>Patient</th><th>Service</th><th>Doctor</th><th>Status</th><th>Action</th>
+          </tr></thead>
+          <tbody id="overviewApptTable"><tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px">No appointments yet. <a onclick="openApptModal()" style="color:var(--teal);cursor:pointer">Add one →</a></td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="sec-hdr"><h2>Recent <span>Patients</span></h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Patient</th><th>Age</th><th>Last Visit</th><th>Treatment</th><th>Action</th></tr></thead>
+          <tbody id="overviewPatientTable"><tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:30px">No patients yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── APPOINTMENTS ── -->
+    <div class="page" id="page-appointments">
+      <div class="sec-hdr">
+        <h2>Appointment <span>Management</span></h2>
+        <button class="btn btn-teal" onclick="openApptModal()"><i data-lucide="plus"></i> New Appointment</button>
+      </div>
+      <div class="filter-bar">
+        <div class="search-inp-wrap"><span class="si"><i data-lucide="search"></i></span><input class="search-inp" placeholder="Search by name, service..." oninput="debouncedRenderAppointments()" id="apptSearch"></div>
+        <select class="filter-select" id="apptStatusFilter" onchange="renderAppointments()">
+          <option value="">All Status</option>
+          <option>Confirmed</option><option>Pending</option><option>Completed</option><option>Cancelled</option>
+        </select>
+        <select class="filter-select" id="apptDrFilter" onchange="renderAppointments()">
+          <option value="">All Doctors</option>
+          <option>Dr. Saranya Mohan</option><option>Dr. Poornima Gopiraj</option><option>Dr. Syed Sulaiman</option><option>Dr. Lakshmi Rathan</option><option>Dr. B. Radhika</option><option>Dr. Ashik Ahamed</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date & Time</th><th>Patient</th><th>Phone</th><th>Service</th><th>Doctor</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="apptTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── PATIENTS ── -->
+    <div class="page" id="page-patients">
+      <div class="sec-hdr">
+        <h2>Patient <span>Records</span></h2>
+        <button class="btn btn-teal" onclick="showPage('add-patient', document.querySelector('.sb-item[onclick*=add-patient]'))"><i data-lucide="plus"></i> Add Patient</button>
+      </div>
+      <div class="filter-bar">
+        <div class="search-inp-wrap"><span class="si"><i data-lucide="search"></i></span><input class="search-inp" placeholder="Search patients..." oninput="debouncedRenderPatients()" id="patientSearch"></div>
+        <select class="filter-select" id="patientFilter" onchange="renderPatients()">
+          <option value="">All Treatments</option>
+          <option>General Check-up</option><option>Scaling</option><option>Dental Filling</option><option>Dental Implants</option><option>Root Canal</option><option>Orthodontics</option><option>SRP</option><option>Zirconia Crowns</option><option>Metal Ceramic Crown</option><option>Ceramic Braces</option><option>Metal Braces</option><option>Clear Aligners</option><option>Child Dental Care</option><option>FLAP Surgery</option><option>Orthognathic Surgery</option><option>Wisdom Tooth Removal</option><option>FPD - Bridging</option><option>Complete Denture</option><option>Fixed Implant Denture</option><option>Removable Overdenture</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Patient</th><th>Age/Gender</th><th>Phone</th><th>Treatment</th><th>Last Visit</th><th>Actions</th></tr></thead>
+          <tbody id="patientTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── ADD PATIENT ── -->
+    <div class="page" id="page-add-patient">
+      <div class="sec-hdr"><h2>Add <span>New Patient</span></h2></div>
+      <div style="max-width:760px">
+        <div class="table-wrap" style="padding:32px; border-radius:var(--radius);">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div class="mg"><label>Full Name *</label><input class="inp" id="np_name" placeholder="Patient full name"></div>
+            <div class="mg"><label>Date of Birth *</label><input class="inp" type="date" id="np_dob"></div>
+            <div class="mg"><label>Gender *</label>
+              <select id="np_gender">
+                <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
+              </select>
+            </div>
+            <div class="mg"><label>Blood Group</label>
+              <select id="np_blood">
+                <option value="">Unknown</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+              </select>
+            </div>
+            <div class="mg"><label>Phone *</label><input class="inp" id="np_phone" placeholder="+91 XXXXX XXXXX"></div>
+            <div class="mg"><label>Email</label><input class="inp" id="np_email" type="email" placeholder="patient@email.com"></div>
+            <div class="mg" style="grid-column:span 2"><label>Address</label><input class="inp" id="np_address" placeholder="Full address"></div>
+            <div class="mg"><label>Primary Treatment *</label>
+              <select id="np_treatment">
+                <option value="">Select</option><option>General Check-up</option><option>Scaling</option><option>Dental Filling</option><option>Dental Implants</option><option>Root Canal</option><option>Orthodontics</option><option>SRP</option><option>Zirconia Crowns</option><option>Metal Ceramic Crown</option><option>Ceramic Braces</option><option>Metal Braces</option><option>Clear Aligners</option><option>Child Dental Care</option><option>FLAP Surgery</option><option>Orthognathic Surgery</option><option>Wisdom Tooth Removal</option><option>FPD - Bridging</option><option>Complete Denture</option><option>Fixed Implant Denture</option><option>Removable Overdenture</option>
+              </select>
+            </div>
+            <div class="mg"><label>Assigned Doctor</label>
+              <select id="np_doctor">
+                <option>Dr. Saranya Mohan</option><option>Dr. Poornima Gopiraj</option><option>Dr. Syed Sulaiman</option><option>Dr. Lakshmi Rathan</option><option>Dr. B. Radhika</option><option>Dr. Ashik Ahamed</option>
+              </select>
+            </div>
+            <div class="mg" style="grid-column:span 2"><label>Medical History / Allergies</label><textarea id="np_history" placeholder="Known allergies, existing conditions, current medications..."></textarea></div>
+            <div class="mg" style="grid-column:span 2"><label>Initial Notes</label><textarea id="np_notes" placeholder="Chief complaint and clinical notes..."></textarea></div>
+          </div>
+          <button class="btn btn-teal" onclick="addPatient()" style="padding:13px 32px;font-size:14px;">✓ Save Patient Record</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ORTHO TREATMENT ── -->
+    <div class="page" id="page-ortho">
+      <div class="sec-hdr">
+        <h2>Orthodontic <span>Treatment Tracker</span></h2>
+        <button class="btn btn-teal" onclick="openOrthoModal()">＋ New Ortho Case</button>
+      </div>
+      <div class="filter-bar">
+        <div class="search-inp-wrap"><span class="si">🔍</span><input class="search-inp" placeholder="Search ortho patients..." oninput="debouncedRenderOrtho()" id="orthoSearch"></div>
+        <select class="filter-select" id="orthoStatusFilter" onchange="renderOrtho()">
+          <option value="">All Status</option><option>Active</option><option>Review</option><option>Completed</option>
+        </select>
+      </div>
+      <div id="orthoCaseList"></div>
+    </div>
+
+    <!-- ── CLINIC HOLIDAYS ── -->
+    <div class="page" id="page-holidays">
+      <div class="sec-hdr"><h2>Clinic <span>Holidays</span></h2></div>
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:24px">
+        <div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px">Upcoming Holidays</div>
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;min-height:200px" id="holidayList"></div>
+        </div>
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:24px;height:fit-content">
+          <div style="font-size:13px;font-weight:600;margin-bottom:16px">Add Holiday</div>
+          <div class="mg"><label>Date *</label><input class="inp" type="date" id="holidayDate"></div>
+          <div class="mg"><label>Reason (optional)</label><input class="inp" id="holidayReason" placeholder="e.g. Republic Day, Pongal..."></div>
+          <button class="btn btn-teal" onclick="addHoliday()" style="width:100%">✓ Add Holiday</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /dashboard -->
+
+<!-- ══════════ MODALS ══════════ -->
+
+<!-- APPOINTMENT MODAL -->
+<div class="modal-overlay" id="apptModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>New <span>Appointment</span></h3>
+      <div class="modal-close" onclick="closeModal('apptModal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="mg-row">
+        <div class="mg"><label>Patient Name *</label><input class="inp" id="am_name" placeholder="Full name"></div>
+        <div class="mg"><label>Phone *</label><input class="inp" id="am_phone" placeholder="+91 XXXXX XXXXX"></div>
+      </div>
+      <div class="mg-row">
+        <div class="mg"><label>Date *</label><input class="inp" type="date" id="am_date"></div>
+        <div class="mg"><label>Time *</label>
+          <select id="am_time">
+            <option>5:00 PM</option><option>5:30 PM</option><option>6:00 PM</option>
+            <option>6:30 PM</option><option>7:00 PM</option><option>7:30 PM</option>
+            <option>8:00 PM</option><option>8:30 PM</option><option>9:00 PM</option>
+          </select>
+        </div>
+      </div>
+      <div class="mg-row">
+        <div class="mg"><label>Service *</label>
+          <select id="am_service">
+            <option>General Check-up</option><option>Scaling</option><option>Dental Filling</option><option>Dental Implants</option>
+            <option>Root Canal</option><option>Orthodontics</option><option>SRP</option><option>Zirconia Crowns</option><option>Metal Ceramic Crown</option><option>Ceramic Braces</option><option>Metal Braces</option><option>Clear Aligners</option><option>Child Dental Care</option><option>FLAP Surgery</option><option>Orthognathic Surgery</option><option>Wisdom Tooth Removal</option><option>FPD - Bridging</option><option>Complete Denture</option><option>Fixed Implant Denture</option><option>Removable Overdenture</option><option>Follow-up</option>
+          </select>
+        </div>
+        <div class="mg"><label>Assigned Doctor</label>
+          <select id="am_doctor">
+            <option>Dr. Saranya Mohan</option><option>Dr. Poornima Gopiraj</option><option>Dr. Syed Sulaiman</option><option>Dr. Lakshmi Rathan</option><option>Dr. B. Radhika</option><option>Dr. Ashik Ahamed</option>
+          </select>
+        </div>
+      </div>
+      <div class="mg-row">
+        <div class="mg"><label>Status</label>
+          <select id="am_status">
+            <option>Confirmed</option><option>Pending</option><option>Completed</option><option>Cancelled</option>
+          </select>
+        </div>
+        <div class="mg"><label>Visit Type</label>
+          <select id="am_visittype">
+            <option>First Visit</option><option>Follow-up</option><option>Emergency</option>
+          </select>
+        </div>
+      </div>
+      <div class="mg"><label>Notes</label><textarea id="am_notes" placeholder="Appointment notes..."></textarea></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-outline" onclick="closeModal('apptModal')">Cancel</button>
+        <button class="btn btn-teal" onclick="saveAppointment()">✓ Save Appointment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORTHO MODAL -->
+<div class="modal-overlay" id="orthoModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>Ortho <span>Case</span></h3>
+      <div class="modal-close" onclick="closeModal('orthoModal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="mg-row">
+        <div class="mg"><label>Patient Name *</label><input class="inp" id="om_name" placeholder="Full name"></div>
+        <div class="mg"><label>Patient ID</label><input class="inp" id="om_pid" placeholder="e.g. PD-0012 (auto if blank)"></div>
+      </div>
+      <div class="mg-row3">
+        <div class="mg"><label>Age</label><input class="inp" type="number" id="om_age" placeholder="Age" min="1"></div>
+        <div class="mg"><label>Gender</label>
+          <select id="om_gender"><option>Male</option><option>Female</option><option>Other</option></select>
+        </div>
+        <div class="mg"><label>Phone</label><input class="inp" id="om_phone" placeholder="+91 XXXXX"></div>
+      </div>
+      <div class="mg-row">
+        <div class="mg"><label>Treatment Type</label>
+          <select id="om_type">
+            <option>Metal Braces</option><option>Ceramic Braces</option><option>Clear Aligners</option>
+            <option>Retainer</option><option>Functional Appliance</option><option>Space Maintainer</option>
+          </select>
+        </div>
+        <div class="mg"><label>Start Date *</label><input class="inp" type="date" id="om_start"></div>
+      </div>
+      <div class="mg-row">
+        <div class="mg"><label>Expected End Date</label><input class="inp" type="date" id="om_end"></div>
+        <div class="mg"><label>Assigned Doctor</label>
+          <select id="om_doctor">
+            <option>Dr. Saranya Mohan</option><option>Dr. Poornima Gopiraj</option><option>Dr. Syed Sulaiman</option><option>Dr. Lakshmi Rathan</option><option>Dr. B. Radhika</option><option>Dr. Ashik Ahamed</option>
+          </select>
+        </div>
+      </div>
+      <div class="mg"><label>Diagnosis / Chief Complaint</label><textarea id="om_diag" placeholder="Crowding, spacing, overbite, crossbite..."></textarea></div>
+      <div class="mg"><label>Treatment Plan</label><textarea id="om_plan" placeholder="Detailed treatment plan and expected milestones..."></textarea></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-outline" onclick="closeModal('orthoModal')">Cancel</button>
+        <button class="btn btn-teal" onclick="saveOrthoCase()">✓ Create Case</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORTHO VISIT MODAL -->
+<div class="modal-overlay" id="orthoVisitModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <h3>Add <span>Visit</span></h3>
+      <div class="modal-close" onclick="closeModal('orthoVisitModal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="mg"><label>Visit Date *</label><input class="inp" type="date" id="ov_date"></div>
+      <div class="mg"><label>Visit Type</label>
+        <select id="ov_type">
+          <option>Regular Adjustment</option><option>Wire Change</option><option>Bracket Rebond</option>
+          <option>Retainer Fit</option><option>Progress Review</option><option>Emergency Visit</option>
+        </select>
+      </div>
+      <div class="mg"><label>Clinical Notes *</label><textarea id="ov_notes" placeholder="What was done, patient feedback, next steps..."></textarea></div>
+      <div class="mg-row">
+        <div class="mg"><label>Progress (%)</label><input class="inp" type="number" id="ov_progress" placeholder="0-100" min="0" max="100"></div>
+        <div class="mg"><label>Next Visit</label><input class="inp" type="date" id="ov_next"></div>
+      </div>
+      <div class="mg"><label>Case Status</label>
+        <select id="ov_status"><option>Active</option><option>Review</option><option>Completed</option></select>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-outline" onclick="closeModal('orthoVisitModal')">Cancel</button>
+        <button class="btn btn-teal" onclick="saveOrthoVisit()">✓ Save Visit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OPG REPORT MODAL -->
+<div class="modal-overlay" id="opgModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-hdr">
+      <h3>OPG <span>Reports</span></h3>
+      <div class="modal-close" onclick="closeModal('opgModal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div id="opgList"></div>
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:600;margin-bottom:16px">Upload New OPG</div>
+        <div class="mg"><label>Report Title *</label><input class="inp" id="opg_title" placeholder="e.g. Pre-treatment OPG, 6-month review"></div>
+        <div class="mg"><label>Date Taken *</label><input class="inp" type="date" id="opg_date"></div>
+        <div class="mg"><label>OPG Report (PDF)</label>
+          <input type="file" id="opgFileInput" accept=".pdf,application/pdf" style="display:none" onchange="handleOPGFileSelect(event)">
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn btn-outline" onclick="triggerOPGUpload()">📄 Select PDF</button>
+            <span style="font-size:11px;color:var(--text-muted)">PDF format only — stored locally</span>
+          </div>
+          <div id="opgPreview" style="margin-top:10px"></div>
+          <input type="hidden" id="opgImageData">
+        </div>
+        <div class="mg"><label>Clinical Notes</label><textarea id="opg_notes" placeholder="Findings, observations..."></textarea></div>
+        <button class="btn btn-teal" onclick="saveOPG()">✓ Save OPG Report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PATIENT VIEW MODAL -->
+<div class="modal-overlay" id="patientViewModal">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-hdr">
+      <h3>Patient <span>Details</span></h3>
+      <div class="modal-close" onclick="closeModal('patientViewModal')">✕</div>
+    </div>
+    <div class="modal-body" id="patientViewBody"></div>
+  </div>
+</div>
+
+<!-- SUPABASE SETUP NOTICE (shows if not configured) -->
+  <div id="supabaseNotice" style="display:none; background:#1a1612; color:#F59E0B; padding:12px 24px; text-align:center; font-size:13px; border-bottom:1px solid rgba(245,158,11,0.3);">
+    ⚠️ <strong>Supabase not configured.</strong> Data will save locally. 
+    <a href="https://app.supabase.com" target="_blank" style="color:#2DD4BF; text-decoration:underline;">Create a project</a> 
+    and update <code>scripts/supabase.js</code> to enable database.
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toastEl">
+    <div class="toast-t" id="toastTitle"></div>
+    <div class="toast-m" id="toastMsg"></div>
+  </div>
+
+  <!-- WHATSAPP FLOATING BUTTON -->
+  <a href="https://wa.me/919176640037?text=Hi%20SP%20Dental%20Care!%20I%27d%20like%20to%20book%20an%20appointment." target="_blank" class="whatsapp-btn" title="Chat with us on WhatsApp" aria-label="WhatsApp" style="position:fixed;bottom:24px;right:24px;z-index:9999;width:48px;height:48px;background:linear-gradient(135deg,#25D366,#128C7E);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(37,211,102,0.4);transition:all 0.3s;text-decoration:none;">
+    <svg viewBox="0 0 32 32" fill="white" width="24" height="24"><path d="M16.004 0h-.008C7.172 0 0 7.172 0 16c0 3.348 1.03 6.457 2.793 9.039L1.082 31.18l6.387-1.668A15.93 15.93 0 0 0 16.004 32C24.828 32 32 24.828 32 16S24.828 0 16.004 0zm9.422 22.594c-.43 1.21-2.136 2.234-3.5 2.535-.93.207-2.152.363-6.273-1.348-5.266-2.188-8.664-7.543-8.926-7.887-.27-.352-2.129-2.836-2.129-5.41 0-2.574 1.352-3.844 1.83-4.367.477-.524 1.043-.66 1.39-.66.348 0 .696.004 1 .031.32.027.754-.122 1.18.903.43 1.035 1.46 3.582 1.59 3.84.13.258.215.562.043.907-.172.344-.258.559-.516.863-.259.304-.543.676-.777.91-.259.258-.528.539-.226 1.055.303.516 1.344 2.219 2.883 3.59 1.98 1.766 3.648 2.313 4.168 2.574.52.261.824.215 1.129-.129.304-.344 1.293-1.5 1.637-2.016.344-.516.688-.43 1.164-.258.477.172 3.008 1.418 3.523 1.676.516.258.86.387.988.601.129.215.129 1.234-.301 2.445z"/></svg>
+  </a>
+
+  <script>
+  // Show notice if Supabase is not configured
+  window.addEventListener('load', () => {
+    if (window.SupabaseDB && !SupabaseDB.isConfigured()) {
+      document.getElementById('supabaseNotice').style.display = 'block';
+    }
+  });
+  </script>
+
+  <script src="js/supabase-config.js?v=7.0"></script>
+  <script src="js/supabase.js?v=7.0"></script>
+
+  <script src="js/admin.js?v=7.0"></script>
+</body>
+</html>
+

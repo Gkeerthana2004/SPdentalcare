@@ -50,8 +50,8 @@ if (hasValidSupabaseUrl && hasValidAnonKey) {
   try {
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
-        autoRefreshToken: true,
-        persistSession: true
+        autoRefreshToken: false,
+        persistSession: false
       }
     });
     isSupabaseConfigured = true;

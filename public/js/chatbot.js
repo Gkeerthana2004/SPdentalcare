@@ -102,10 +102,11 @@ function showChatTimeSlots() {
     local.filter(a => a.date === chatState.data.date).forEach(a => booked.add(a.time));
   } catch (e) {}
   chatTimes.forEach(t => {
+    const past2h = isSlotPast2Hours(t, chatState.data.date);
     const b = document.createElement('button');
-    b.className = 'chat-opt-btn' + (booked.has(t) ? ' disabled' : '');
-    b.textContent = t;
-    if (!booked.has(t)) b.onclick = () => handleChatChoice('time', t);
+    b.className = 'chat-opt-btn' + (booked.has(t) || past2h ? ' disabled' : '');
+    b.textContent = t + (past2h ? ' (too soon)' : '');
+    if (!booked.has(t) && !past2h) b.onclick = () => handleChatChoice('time', t);
     d.appendChild(b);
   });
   body.appendChild(d);
@@ -171,9 +172,14 @@ async function handleChatChoice(key, value) {
     const formatted = d.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
     chatState.data.dateDisplay = formatted;
     setTimeout(() => addChatMsg('bot', '\uD83D\uDCC5 <b>' + htmlEscape(formatted) + '</b> \u2014 great! Now choose a time slot:'), 400);
+    setTimeout(() => addChatMsg('bot', '<small>\u2139\uFE0F Appointments must be booked at least 2 hours in advance.</small>'), 700);
     setTimeout(() => showChatTimeSlots(), 900);
     chatState.step = 3;
   } else if (key === 'time') {
+    if (isSlotPast2Hours(value, chatState.data.date)) {
+      addChatMsg('bot', '\u274C That slot is less than 2 hours away. Please choose a later time.');
+      return;
+    }
     setTimeout(() => addChatMsg('bot', '\u23F0 <b>' + htmlEscape(value) + '</b> \u2014 perfect! Who would you like to see?'), 400);
     setTimeout(() => showChatOptions(chatDoctors, 'doctor'), 900);
     chatState.step = 4;

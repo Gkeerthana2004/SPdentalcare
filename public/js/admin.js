@@ -2,7 +2,21 @@ function getLocal(k) {
   try { return JSON.parse(localStorage.getItem('pd_' + k) || '[]'); } catch { return []; }
 }
 function setLocal(k, v) {
-  localStorage.setItem('pd_' + k, JSON.stringify(v));
+  try {
+    localStorage.setItem('pd_' + k, JSON.stringify(v));
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
+      console.warn('localStorage quota exceeded for key:', k);
+      if (Array.isArray(v) && v.length > 10) {
+        v = v.slice(0, 10);
+        try {
+          localStorage.setItem('pd_' + k, JSON.stringify(v));
+        } catch (_) {}
+      }
+    } else {
+      throw e;
+    }
+  }
 }
 
 function debounce(fn, ms) {
@@ -44,13 +58,14 @@ function mergeById(localItems, remoteItems) {
 const DB = {
   async get(k) {
     const localData = getLocal(k);
-    if (SupabaseDB.isConfigured() && k !== 'opg_reports') {
+    if (SupabaseDB.isConfigured()) {
       try {
         let supabaseData = [];
         switch(k) {
           case 'patients': supabaseData = await SupabaseDB.getPatients(); break;
           case 'appointments': supabaseData = await SupabaseDB.getAppointments(); break;
           case 'ortho': supabaseData = await SupabaseDB.getOrthodontics(); break;
+          case 'opg_reports': supabaseData = await SupabaseDB.getOPGReports(); break;
         }
         return mergeById(localData, supabaseData);
       } catch (e) {
@@ -64,14 +79,24 @@ const DB = {
     const localData = getLocal(k);
     localData.unshift(item);
     setLocal(k, localData);
-    if (SupabaseDB.isConfigured() && k !== 'opg_reports') {
+    if (SupabaseDB.isConfigured()) {
       try {
         switch(k) {
           case 'patients': return await SupabaseDB.addPatient(item);
           case 'appointments': return await SupabaseDB.addAppointment(item);
           case 'ortho': return await SupabaseDB.addOrthodonticCase(item);
+          case 'opg_reports': return await SupabaseDB.addOPGReport(item);
         }
       } catch (e) {
+        if (e.code === '23505' || (e.message && e.message.includes('duplicate'))) {
+          try {
+            switch(k) {
+              case 'patients': return await SupabaseDB.updatePatient(item.id, item);
+              case 'appointments': return await SupabaseDB.updateAppointment(item.id, item);
+              case 'ortho': return await SupabaseDB.updateOrthodonticCase(item.id, item);
+            }
+          } catch (_) {}
+        }
         console.warn('DB.push Supabase error, saved locally:', e);
       }
     }
@@ -102,12 +127,13 @@ const DB = {
     let localData = getLocal(k);
     localData = localData.filter(x => x.id !== id);
     setLocal(k, localData);
-    if (SupabaseDB.isConfigured() && k !== 'opg_reports') {
+    if (SupabaseDB.isConfigured()) {
       try {
         switch(k) {
           case 'patients': await SupabaseDB.deletePatient(id); break;
           case 'appointments': await SupabaseDB.deleteAppointment(id); break;
           case 'ortho': await SupabaseDB.deleteOrthodonticCase(id); break;
+          case 'opg_reports': await SupabaseDB.deleteOPGReport(id); break;
         }
       } catch (e) {
         console.warn('DB.delete Supabase error:', e);
@@ -117,7 +143,7 @@ const DB = {
 
   async set(k, v) {
     setLocal(k, v);
-    if (SupabaseDB.isConfigured() && Array.isArray(v) && k !== 'opg_reports') {
+    if (SupabaseDB.isConfigured() && Array.isArray(v)) {
       for (const item of v) {
         if (!item.id) continue;
         try {
@@ -125,6 +151,7 @@ const DB = {
             case 'patients': await SupabaseDB.addPatient(item).catch(() => SupabaseDB.updatePatient(item.id, item)); break;
             case 'appointments': await SupabaseDB.addAppointment(item).catch(() => SupabaseDB.updateAppointment(item.id, item)); break;
             case 'ortho': await SupabaseDB.addOrthodonticCase(item).catch(() => SupabaseDB.updateOrthodonticCase(item.id, item)); break;
+            case 'opg_reports': await SupabaseDB.addOPGReport(item); break;
           }
         } catch (e) {
           console.warn('DB.set Supabase sync error:', e);
@@ -171,7 +198,6 @@ let currentUser = null;
 let loginAttempts = [];
 
 async function handleLogin() {
-  console.log('[Login] handleLogin called');
   const now = Date.now();
   loginAttempts = loginAttempts.filter(t => now - t < 60000);
   if (loginAttempts.length >= 5) {
@@ -182,7 +208,6 @@ async function handleLogin() {
 
   const email = document.getElementById('loginUser').value.trim();
   const password = document.getElementById('loginPass').value;
-  console.log('[Login] Email:', email, 'Password length:', password.length);
 
   if (!email || !password) {
     showLoginError('Please enter email and password');
@@ -200,22 +225,20 @@ async function handleLogin() {
     btnArrow.style.display = 'none';
     btnLoader.style.display = 'inline-flex';
 
-    console.log('[Login] SupabaseDB available:', typeof SupabaseDB !== 'undefined');
-    console.log('[Login] SupabaseDB configured:', typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured());
-
     if (typeof SupabaseDB === 'undefined' || !SupabaseDB.isConfigured()) {
       showLoginError('Supabase not configured. Check .env file.');
+      btn.disabled = false;
+      btnText.style.display = 'inline';
+      btnArrow.style.display = 'inline';
+      btnLoader.style.display = 'none';
       return;
     }
 
     loginAttempts.push(now);
-    console.log('[Login] Calling SupabaseDB.login...');
     const result = await SupabaseDB.login(email, password);
-    console.log('[Login] Result:', result);
 
     loginAttempts = [];
     if (!result || !result.user || !result.session) {
-      console.log('[Login] No user/session in result');
       showLoginError('Login failed. Please check your credentials.');
       document.getElementById('loginPass').value = '';
       return;
@@ -226,8 +249,6 @@ async function handleLogin() {
       role: result.user.user_metadata?.role || 'Doctor',
       avatar: result.user.user_metadata?.avatar || '👨‍⚕️'
     };
-    console.log('[Login] Success! User:', currentUser.name);
-    localStorage.removeItem('pd_logged_out');
     document.getElementById('loginErr').style.display = 'none';
     document.getElementById('sbDocName').textContent = currentUser.name;
     document.getElementById('sbDocRole').textContent = currentUser.role;
@@ -238,7 +259,6 @@ async function handleLogin() {
     await refreshAll();
     toast('👋', 'Welcome back!', currentUser.name + ' — ' + currentUser.role, 'success');
   } catch (e) {
-    console.error('[Login] Error:', e);
     if (e.message && e.message.includes('Invalid login credentials')) {
       showLoginError('Invalid email or password. Please try again.');
     } else {
@@ -268,7 +288,6 @@ document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key
 
 async function doLogout() {
   currentUser = null;
-  localStorage.setItem('pd_logged_out', '1');
   if (SupabaseDB.isConfigured()) {
     try { await SupabaseDB.logout(); } catch (e) {}
   }
@@ -935,6 +954,14 @@ function toast(icon, title, msg, type='') {
 }
 
 async function refreshAll() {
+  if (SupabaseDB.isConfigured()) {
+    try {
+      const remoteOPGs = await SupabaseDB.getOPGReports();
+      if (remoteOPGs.length > 0) {
+        localStorage.removeItem('pd_opg_reports');
+      }
+    } catch (_) {}
+  }
   await renderOverview();
   const today = new Date();
   document.getElementById('topbarDate').textContent = today.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -942,39 +969,12 @@ async function refreshAll() {
 
 (async () => {
   try {
+    localStorage.removeItem('pd_opg_reports');
+  } catch (_) {}
+
+  try {
     await seedData();
   } catch (e) {
     console.error('Error initializing data:', e);
-  }
-
-  const loggedOut = localStorage.getItem('pd_logged_out');
-  if (loggedOut) {
-    localStorage.removeItem('pd_logged_out');
-    console.log('[Session] User previously logged out, showing login screen');
-    return;
-  }
-
-  try {
-    if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
-      const session = await initSession();
-      if (session && session.user) {
-        currentUser = {
-          email: session.user.email,
-          name: session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || 'Doctor',
-          role: session.user.user_metadata?.role || 'Doctor',
-          avatar: session.user.user_metadata?.avatar || '👨‍⚕️'
-        };
-        document.getElementById('sbDocName').textContent = currentUser.name;
-        document.getElementById('sbDocRole').textContent = currentUser.role;
-        document.getElementById('sbAvatar').innerHTML = currentUser.avatar;
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-        await refreshAll();
-        console.log('[Session] Auto-logged in as', currentUser.name);
-      }
-    }
-  } catch (e) {
-    console.warn('[Session] Could not restore session:', e.message);
   }
 })();

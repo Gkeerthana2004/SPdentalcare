@@ -1,6 +1,31 @@
 const booking = { service:'', date:'', time:'', doctor:'', name:'', phone:'', email:'', age:'', visitType:'', concern:'' };
 let currentStep = 1;
 
+function parseTime12h(timeStr) {
+  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return null;
+  let h = parseInt(match[1], 10);
+  const m = parseInt(match[2], 10);
+  const period = match[3].toUpperCase();
+  if (period === 'PM' && h !== 12) h += 12;
+  if (period === 'AM' && h === 12) h = 0;
+  return { h, m };
+}
+
+function isSlotPast2Hours(timeStr, dateStr) {
+  if (!dateStr || !timeStr) return false;
+  const now = new Date();
+  const slotDate = new Date(dateStr + 'T00:00:00');
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const slotDay = new Date(slotDate.getFullYear(), slotDate.getMonth(), slotDate.getDate());
+  if (slotDay.getTime() !== today.getTime()) return false;
+  const parsed = parseTime12h(timeStr);
+  if (!parsed) return false;
+  const slotTime = new Date(slotDate.getFullYear(), slotDate.getMonth(), slotDate.getDate(), parsed.h, parsed.m, 0);
+  const diffMs = slotTime.getTime() - now.getTime();
+  return diffMs < 2 * 60 * 60 * 1000;
+}
+
 function selectOpt(el, groupId) {
   document.querySelectorAll('#' + groupId + ' .service-opt, #' + groupId + ' .doc-opt').forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
@@ -31,14 +56,14 @@ async function updateSlotAvailability() {
   }
   document.querySelectorAll('.time-slot').forEach(slot => {
     const time = slot.textContent.trim();
-    if (bookedTimes.has(time)) {
+    if (bookedTimes.has(time) || isSlotPast2Hours(time, date)) {
       slot.classList.add('unavailable');
       slot.classList.remove('selected');
     } else {
       slot.classList.remove('unavailable');
     }
   });
-  if (bookedTimes.has(booking.time)) booking.time = '';
+  if (bookedTimes.has(booking.time) || isSlotPast2Hours(booking.time, date)) booking.time = '';
 }
 
 async function nextStep(step) {
@@ -56,7 +81,12 @@ async function nextStep(step) {
       return;
     }
     await updateSlotAvailability();
-    if (!booking.time) { showToast('\u26A0\uFE0F','Pick a time slot','This slot is already booked \u2014 please choose another'); return; }
+    if (!booking.time) { showToast('\u26A0\uFE0F','Pick a time slot','This slot is already booked or too soon \u2014 please choose another'); return; }
+    if (isSlotPast2Hours(booking.time, booking.date)) {
+      booking.time = '';
+      showToast('\u26A0\uFE0F','Slot too soon','Appointments must be booked at least 2 hours in advance. Please choose a later slot.');
+      return;
+    }
   }
   if (step === 3) {
     if (!booking.doctor) booking.doctor = 'Any Available Doctor';
@@ -229,8 +259,6 @@ if (holidayToday) {
   document.getElementById('siteHolidayBanner').style.display = 'block';
   document.getElementById('siteHolidayMsg').textContent = '\uD83C\uDF89 Today is a holiday (' + (holidayToday.reason || 'Holiday') + ').';
   document.getElementById('navbar').style.top = '46px';
-
-  document.getElementById('heroSlotText').innerHTML = '<span style="color:#e74c3c">\uD83C\uDF89 Closed today \u2014 ' + htmlEscape(holidayToday.reason || 'Holiday') + '</span>';
 
   const waBtn = document.getElementById('whatsappBtn');
   if (waBtn) {

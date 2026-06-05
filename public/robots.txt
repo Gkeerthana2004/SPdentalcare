@@ -1,0 +1,11 @@
+# SP Dental Care - robots.txt
+User-agent: *
+Allow: /
+Disallow: /dashboard.html
+Disallow: /js/
+Disallow: /css/
+Disallow: /db/
+Disallow: /scripts/
+
+# Sitemaps
+Sitemap: https://www.spdentalcare.in/sitemap.xml

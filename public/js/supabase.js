@@ -55,7 +55,7 @@ if (hasValidSupabaseUrl && hasValidAnonKey) {
       }
     });
     isSupabaseConfigured = true;
-    console.log('Supabase client initialized');
+    // Supabase client initialized
   } catch (e) {
     console.warn('Supabase init failed:', e.message);
   }
@@ -67,6 +67,13 @@ async function initSession() {
   if (!supabaseClient) return null;
   const { data } = await supabaseClient.auth.getSession();
   currentSession = data?.session || null;
+  if (currentSession && currentSession.expires_at) {
+    const expiresAt = new Date(currentSession.expires_at * 1000);
+    if (expiresAt <= new Date()) {
+      currentSession = null;
+      try { await supabaseClient.auth.signOut(); } catch (_) {}
+    }
+  }
   return currentSession;
 }
 
@@ -296,5 +303,4 @@ window.getSession = getSession;
 
 window.supabaseClient = supabaseClient;
 
-initSession().catch(e => console.warn('Session init error:', e.message));
-console.log('SupabaseDB initialized. Configured:', SupabaseDB.isConfigured());
+initSession().catch(() => {});

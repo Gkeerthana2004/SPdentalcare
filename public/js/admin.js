@@ -252,7 +252,7 @@ async function handleLogin() {
     document.getElementById('loginErr').style.display = 'none';
     document.getElementById('sbDocName').textContent = currentUser.name;
     document.getElementById('sbDocRole').textContent = currentUser.role;
-    document.getElementById('sbAvatar').innerHTML = currentUser.avatar;
+    document.getElementById('sbAvatar').textContent = currentUser.avatar;
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     if (typeof lucide !== 'undefined') lucide.createIcons();

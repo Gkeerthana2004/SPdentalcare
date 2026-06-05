@@ -1,0 +1,18 @@
+{
+  "name": "SP Dental Care",
+  "short_name": "SP Dental",
+  "description": "Premium dental clinic in Chennai - Book appointments, view services, and meet our expert dentists.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFEF9",
+  "theme_color": "#2DD4BF",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["medical", "health"]
+}

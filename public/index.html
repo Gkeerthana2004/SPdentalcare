@@ -3,12 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SP Dental Care | Premium Dental Services</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
+<title>SP Dental Care | Premium Dental Clinic in Chennai | Book Appointment</title>
+<meta name="description" content="SP Dental Care - Chennai's trusted premium dental clinic offering general check-ups, dental implants, orthodontics, root canal, braces & more. Book appointments online. Open 5 PM - 9 PM daily.">
+<meta name="keywords" content="dental clinic Chennai, dentist near me, dental implants, orthodontics, braces, root canal, teeth cleaning, SP Dental Care, Kattankulathur dentist">
+<meta name="author" content="SP Dental Care">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.spdentalcare.in/">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.spdentalcare.in/">
+<meta property="og:title" content="SP Dental Care | Premium Dental Clinic in Chennai">
+<meta property="og:description" content="Chennai's trusted premium dental clinic offering general check-ups, dental implants, orthodontics, root canal, braces & more. Book appointments online.">
+<meta property="og:image" content="https://www.spdentalcare.in/og-image.png">
+<meta property="og:locale" content="en_IN">
+<meta property="og:site_name" content="SP Dental Care">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://www.spdentalcare.in/">
+<meta name="twitter:title" content="SP Dental Care | Premium Dental Clinic in Chennai">
+<meta name="twitter:description" content="Chennai's trusted premium dental clinic offering general check-ups, dental implants, orthodontics, root canal, braces & more.">
+<meta name="twitter:image" content="https://www.spdentalcare.in/og-image.png">
+
+<!-- Geo -->
+<meta name="geo.region" content="IN-TN">
+<meta name="geo.placename" content="Chennai">
+<meta name="geo.position" content="12.8238;80.0425">
+<meta name="ICBM" content="12.8238, 80.0425">
+
+<!-- Preconnect & DNS Prefetch -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+<link rel="dns-prefetch" href="https://unpkg.com">
+<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+<link rel="dns-prefetch" href="https://*.supabase.co">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2DD4BF">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/landing.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Structured Data - LocalBusiness -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Dentist",
+  "name": "SP Dental Care",
+  "description": "Premium dental clinic in Chennai offering general check-ups, dental implants, orthodontics, root canal, braces and more.",
+  "url": "https://www.spdentalcare.in",
+  "telephone": "+919176640037",
+  "email": "spdentalcare2018@gmail.com",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "No 6, Bharathiyar St, Potheri",
+    "addressLocality": "Kattankulathur",
+    "addressRegion": "Tamil Nadu",
+    "postalCode": "603203",
+    "addressCountry": "IN"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 12.8238,
+    "longitude": 80.0425
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+      "opens": "17:00",
+      "closes": "21:00"
+    }
+  ],
+  "priceRange": "$$",
+  "image": "https://www.spdentalcare.in/og-image.png",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.9",
+    "reviewCount": "500"
+  },
+  "hasMap": "https://maps.app.goo.gl/yggotZLo7CVqgWr48",
+  "medicalSpecialty": ["Dentistry","Orthodontics","Oral Surgery","Periodontics","Endodontics"],
+  "founder": {
+    "@type": "Person",
+    "name": "Dr. Saranya Mohan"
+  }
+}
+</script>
 </head>
 <body>
 
@@ -21,7 +107,7 @@
 </div>
 
 <!-- NAV -->
-<nav id="navbar">
+<nav id="navbar" aria-label="Main navigation">
   <a href="#" class="logo">
     <div class="logo-icon">🦷</div>
     <span>SP Dental Care</span>
@@ -33,7 +119,7 @@
     <li><a href="#gallery">Gallery</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#booking" class="nav-cta">Book Appointment</a></li>
-    <li><a href="dashboard.html" class="nav-login" title="Doctor Login">🔐</a></li>
+    <li><a href="dashboard.html" class="nav-login" title="Doctor Login" rel="noopener">🔐</a></li>
   </ul>
   <div class="hamburger" id="hamburger" role="button" aria-label="Toggle navigation menu" aria-expanded="false" tabindex="0">
     <span></span><span></span><span></span>
@@ -41,7 +127,7 @@
 </nav>
 
 <!-- MOBILE NAV -->
-<div class="mobile-nav" id="mobileNav">
+<div class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
   <button class="mobile-close" id="mobileClose">✕</button>
   <a href="#services" onclick="closeMobileNav()">Services</a>
   <a href="#doctors" onclick="closeMobileNav()">Doctors</a>
@@ -49,8 +135,10 @@
   <a href="#gallery" onclick="closeMobileNav()">Gallery</a>
   <a href="#contact" onclick="closeMobileNav()">Contact</a>
   <a href="#booking" onclick="closeMobileNav()" style="color:var(--teal)">Book Appointment</a>
-  <a href="dashboard.html" class="mobile-login" onclick="closeMobileNav()" title="Doctor Login">🔐 Doctor Login</a>
+  <a href="dashboard.html" class="mobile-login" onclick="closeMobileNav()" title="Doctor Login" rel="noopener">🔐 Doctor Login</a>
 </div>
+
+<main role="main">
 
 <!-- HERO -->
 <section class="hero" id="home">
@@ -578,7 +666,7 @@
           <div class="ci-icon">📍</div>
           <div class="ci-text">
             <h4>Our Location</h4>
-            <p><a href="https://maps.app.goo.gl/yggotZLo7CVqgWr48" target="_blank" class="contact-link">No 6, Bharathiyar St, Potheri<br>Kattankulathur, Tamil Nadu 603203</a></p>
+            <p><a href="https://maps.app.goo.gl/yggotZLo7CVqgWr48" target="_blank" rel="noopener noreferrer" class="contact-link">No 6, Bharathiyar St, Potheri<br>Kattankulathur, Tamil Nadu 603203</a></p>
           </div>
         </div>
         <div class="contact-item reveal">
@@ -597,7 +685,7 @@
         </div>
       </div>
       <div class="map-container reveal">
-        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.46!2d80.0425!3d12.8238!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a52f5e5e5e5!2sBharathiyar+St%2C+Potheri%2C+Kattankulathur%2C+Tamil+Nadu+603203!5e0!3m2!1sen!2sin!4v1700000000" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.46!2d80.0425!3d12.8238!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a52f5e5e5e5!2sBharathiyar+St%2C+Potheri%2C+Kattankulathur%2C+Tamil+Nadu+603203!5e0!3m2!1sen!2sin!4v1700000000" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="SP Dental Care Location on Google Maps"></iframe>
       </div>
       <div class="review-card reveal">
         <div class="review-header">
@@ -651,6 +739,8 @@
     </div>
   </div>
 </section>
+
+</main>
 
 <!-- FOOTER -->
 <footer>
@@ -709,7 +799,7 @@
 <!-- SUPABASE SETUP NOTICE (shows if not configured) -->
 <div id="supabaseNotice" style="display:none; background:#1a1612; color:#F59E0B; padding:12px 24px; text-align:center; font-size:13px; border-bottom:1px solid rgba(245,158,11,0.3);">
    ⚠️ <strong>Supabase not configured.</strong> Bookings will save locally. 
-   <a href="https://app.supabase.com" target="_blank" style="color:#2DD4BF; text-decoration:underline;">Create a project</a> 
+   <a href="https://app.supabase.com" target="_blank" rel="noopener noreferrer" style="color:#2DD4BF; text-decoration:underline;">Create a project</a> 
    and update <code>scripts/supabase-config.js</code> to enable database.
 </div>
 
@@ -739,7 +829,7 @@
 </div>
 
 <!-- WHATSAPP FLOATING BUTTON -->
-<a id="whatsappBtn" href="https://wa.me/919176640037?text=Hi%20SP%20Dental%20Care!%20I%27d%20like%20to%20know%20more%20about%20your%20services." target="_blank" class="whatsapp-btn" title="Chat with us on WhatsApp" aria-label="WhatsApp">
+<a id="whatsappBtn" href="https://wa.me/919176640037?text=Hi%20SP%20Dental%20Care!%20I%27d%20like%20to%20know%20more%20about%20your%20services." target="_blank" rel="noopener noreferrer" class="whatsapp-btn" title="Chat with us on WhatsApp" aria-label="WhatsApp">
   <svg viewBox="0 0 32 32" fill="white" width="28" height="28"><path d="M16.004 0h-.008C7.172 0 0 7.172 0 16c0 3.348 1.03 6.457 2.793 9.039L1.082 31.18l6.387-1.668A15.93 15.93 0 0 0 16.004 32C24.828 32 32 24.828 32 16S24.828 0 16.004 0zm9.422 22.594c-.43 1.21-2.136 2.234-3.5 2.535-.93.207-2.152.363-6.273-1.348-5.266-2.188-8.664-7.543-8.926-7.887-.27-.352-2.129-2.836-2.129-5.41 0-2.574 1.352-3.844 1.83-4.367.477-.524 1.043-.66 1.39-.66.348 0 .696.004 1 .031.32.027.754-.122 1.18.903.43 1.035 1.46 3.582 1.59 3.84.13.258.215.562.043.907-.172.344-.258.559-.516.863-.259.304-.543.676-.777.91-.259.258-.528.539-.226 1.055.303.516 1.344 2.219 2.883 3.59 1.98 1.766 3.648 2.313 4.168 2.574.52.261.824.215 1.129-.129.304-.344 1.293-1.5 1.637-2.016.344-.516.688-.43 1.164-.258.477.172 3.008 1.418 3.523 1.676.516.258.86.387.988.601.129.215.129 1.234-.301 2.445z"/></svg>
   <span class="whatsapp-text">Chat with us</span>
 </a>

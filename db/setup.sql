@@ -115,7 +115,7 @@ CREATE POLICY "Anyone can book appointments"
 
 CREATE POLICY "Doctors can view appointments"
   ON public.appointments FOR SELECT
-  USING (auth.role() = 'authenticated' OR auth.role() = 'anon');
+  USING (auth.role() = 'authenticated');
 
 CREATE POLICY "Doctors can update appointments"
   ON public.appointments FOR UPDATE

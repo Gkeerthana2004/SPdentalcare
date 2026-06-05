@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SP Dental Care - Doctor Portal</title>
+  <title>Doctor Portal | SP Dental Care - Dashboard</title>
+  <meta name="description" content="SP Dental Care doctor portal for managing appointments, patient records, orthodontic treatment tracking, and clinic operations.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#2DD4BF">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css">
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -500,7 +504,7 @@
 <!-- SUPABASE SETUP NOTICE (shows if not configured) -->
   <div id="supabaseNotice" style="display:none; background:#1a1612; color:#F59E0B; padding:12px 24px; text-align:center; font-size:13px; border-bottom:1px solid rgba(245,158,11,0.3);">
     ⚠️ <strong>Supabase not configured.</strong> Data will save locally. 
-    <a href="https://app.supabase.com" target="_blank" style="color:#2DD4BF; text-decoration:underline;">Create a project</a> 
+    <a href="https://app.supabase.com" target="_blank" rel="noopener noreferrer" style="color:#2DD4BF; text-decoration:underline;">Create a project</a> 
     and update <code>scripts/supabase.js</code> to enable database.
   </div>
 
@@ -511,7 +515,7 @@
   </div>
 
   <!-- WHATSAPP FLOATING BUTTON -->
-  <a href="https://wa.me/919176640037?text=Hi%20SP%20Dental%20Care!%20I%27d%20like%20to%20book%20an%20appointment." target="_blank" class="whatsapp-btn" title="Chat with us on WhatsApp" aria-label="WhatsApp" style="position:fixed;bottom:24px;right:24px;z-index:9999;width:48px;height:48px;background:linear-gradient(135deg,#25D366,#128C7E);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(37,211,102,0.4);transition:all 0.3s;text-decoration:none;">
+  <a href="https://wa.me/919176640037?text=Hi%20SP%20Dental%20Care!%20I%27d%20like%20to%20book%20an%20appointment." target="_blank" rel="noopener noreferrer" class="whatsapp-btn" title="Chat with us on WhatsApp" aria-label="WhatsApp" style="position:fixed;bottom:24px;right:24px;z-index:9999;width:48px;height:48px;background:linear-gradient(135deg,#25D366,#128C7E);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(37,211,102,0.4);transition:all 0.3s;text-decoration:none;">
     <svg viewBox="0 0 32 32" fill="white" width="24" height="24"><path d="M16.004 0h-.008C7.172 0 0 7.172 0 16c0 3.348 1.03 6.457 2.793 9.039L1.082 31.18l6.387-1.668A15.93 15.93 0 0 0 16.004 32C24.828 32 32 24.828 32 16S24.828 0 16.004 0zm9.422 22.594c-.43 1.21-2.136 2.234-3.5 2.535-.93.207-2.152.363-6.273-1.348-5.266-2.188-8.664-7.543-8.926-7.887-.27-.352-2.129-2.836-2.129-5.41 0-2.574 1.352-3.844 1.83-4.367.477-.524 1.043-.66 1.39-.66.348 0 .696.004 1 .031.32.027.754-.122 1.18.903.43 1.035 1.46 3.582 1.59 3.84.13.258.215.562.043.907-.172.344-.258.559-.516.863-.259.304-.543.676-.777.91-.259.258-.528.539-.226 1.055.303.516 1.344 2.219 2.883 3.59 1.98 1.766 3.648 2.313 4.168 2.574.52.261.824.215 1.129-.129.304-.344 1.293-1.5 1.637-2.016.344-.516.688-.43 1.164-.258.477.172 3.008 1.418 3.523 1.676.516.258.86.387.988.601.129.215.129 1.234-.301 2.445z"/></svg>
   </a>
 

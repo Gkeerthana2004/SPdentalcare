@@ -67,7 +67,7 @@ async function nextStep(step) {
     }
   }
   if (step === 3) {
-    if (!booking.doctor) booking.doctor = 'Any Available Doctor';
+    booking.doctor = 'Dr. Saranya Mohan';
   }
   showStep(step +1);
 }

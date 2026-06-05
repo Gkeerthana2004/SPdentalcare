@@ -5,8 +5,7 @@ const chatServices = [
 ];
 
 const chatDoctors = [
-  'Dr. Saranya Mohan', 'Dr. Poornima Gopiraj', 'Dr. Syed Sulaiman',
-  'Dr. Lakshmi Rathan', 'Dr. B. Radhika', 'Dr. Ashik Ahamed', 'Any Available'
+  'Dr. Saranya Mohan'
 ];
 
 const chatTimes = ['5:00 PM','5:30 PM','6:00 PM','6:30 PM','7:00 PM','7:30 PM','8:00 PM','8:30 PM','9:00 PM'];

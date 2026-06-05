@@ -41,12 +41,9 @@ function parseTime12h(timeStr) {
 function isSlotPast2Hours(timeStr, dateStr) {
   if (!dateStr || !timeStr) return false;
   const now = new Date();
-  const slotDate = new Date(dateStr + 'T00:00:00');
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const slotDay = new Date(slotDate.getFullYear(), slotDate.getMonth(), slotDate.getDate());
-  if (slotDay.getTime() !== today.getTime()) return false;
   const parsed = parseTime12h(timeStr);
   if (!parsed) return false;
+  const slotDate = new Date(dateStr + 'T00:00:00');
   const slotTime = new Date(slotDate.getFullYear(), slotDate.getMonth(), slotDate.getDate(), parsed.h, parsed.m, 0);
   const diffMs = slotTime.getTime() - now.getTime();
   return diffMs < 2 * 60 * 60 * 1000;

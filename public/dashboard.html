@@ -151,7 +151,12 @@
   <!-- MAIN CONTENT -->
   <div class="main">
     <div class="topbar">
-      <div class="topbar-title" id="pageTitle">Overview <span>Dashboard</span></div>
+      <div class="topbar-left">
+        <button class="sb-toggle" id="sbToggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <div class="topbar-title" id="pageTitle">Overview <span>Dashboard</span></div>
+      </div>
       <div class="topbar-right">
         <a href="index.html" class="topbar-home" title="Back to Home"><i data-lucide="home"></i> Home</a>
         <div class="topbar-date" id="topbarDate"></div>
@@ -302,7 +307,7 @@
         <button class="btn btn-teal" onclick="openOrthoModal()">＋ New Ortho Case</button>
       </div>
       <div class="filter-bar">
-        <div class="search-inp-wrap"><span class="si">🔍</span><input class="search-inp" placeholder="Search ortho patients..." oninput="debouncedRenderOrtho()" id="orthoSearch"></div>
+        <div class="search-inp-wrap"><span class="si"><i data-lucide="search"></i></span><input class="search-inp" placeholder="Search ortho patients..." oninput="debouncedRenderOrtho()" id="orthoSearch"></div>
         <select class="filter-select" id="orthoStatusFilter" onchange="renderOrtho()">
           <option value="">All Status</option><option>Active</option><option>Review</option><option>Completed</option>
         </select>

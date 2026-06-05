@@ -48,6 +48,19 @@ function togglePasswordVisibility() {
   }
 }
 
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  sidebar.classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+  const sidebar = document.getElementById('sidebar');
+  const toggle = document.getElementById('sbToggle');
+  if (sidebar && sidebar.classList.contains('open') && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+    sidebar.classList.remove('open');
+  }
+});
+
 const PHI_KEYS = ['patients', 'appointments', 'ortho', 'opg_reports'];
 
 async function logAudit(action, entityType, entityId, entityName, details = {}) {
@@ -303,6 +316,7 @@ async function handleLogin() {
 }
 
 window.handleLogin = handleLogin;
+window.extendSession = extendSession;
 
 function showLoginError(msg) {
   const err = document.getElementById('loginErr');
@@ -342,14 +356,32 @@ function clearSessionTimeout() {
 function resetSessionTimeout() {
   clearSessionTimeout();
   sessionWarningId = setTimeout(() => {
-    if (confirm('Your session will expire in 1 minute due to inactivity. Click OK to stay logged in.')) {
-      resetSessionTimeout();
-    }
+    showSessionWarning();
   }, SESSION_TIMEOUT_MS - 60000);
   sessionTimeoutId = setTimeout(() => {
     toast('\u23F0','Session Expired','You have been logged out due to inactivity.');
     doLogout();
   }, SESSION_TIMEOUT_MS);
+}
+
+function showSessionWarning() {
+  const existing = document.getElementById('sessionWarningModal');
+  if (existing) existing.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'sessionWarningModal';
+  modal.className = 'modal-overlay open';
+  modal.style.zIndex = '600';
+  modal.innerHTML = '<div class="modal" style="max-width:400px;text-align:center"><div class="modal-body" style="padding:32px"><div style="font-size:48px;margin-bottom:16px">\u23F0</div><h3 style="font-family:\'Cormorant Garamond\',serif;font-size:22px;margin-bottom:8px;color:var(--deep)">Session Expiring Soon</h3><p style="font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.6">Your session will expire in 1 minute due to inactivity.</p><div style="display:flex;gap:12px;justify-content:center"><button class="btn btn-teal" onclick="extendSession()">Stay Logged In</button><button class="btn btn-outline" onclick="doLogout()">Sign Out</button></div></div></div>';
+  
+  modal.addEventListener('click', function(e) { if (e.target === this) extendSession(); });
+  document.body.appendChild(modal);
+}
+
+function extendSession() {
+  const modal = document.getElementById('sessionWarningModal');
+  if (modal) modal.remove();
+  resetSessionTimeout();
 }
 
 let sessionListenersAdded = false;

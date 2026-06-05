@@ -28,6 +28,14 @@ async function seed() {
       console.error(`Password must be at least 8 characters. Skipping ${doc.email}.`);
       continue;
     }
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      console.error(`Password must contain uppercase, lowercase, number, and special character. Skipping ${doc.email}.`);
+      continue;
+    }
     const { data, error } = await supabase.auth.admin.createUser({
       email: doc.email,
       password,

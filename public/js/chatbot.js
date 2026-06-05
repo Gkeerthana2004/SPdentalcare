@@ -34,6 +34,13 @@ function toggleChat() {
   }
 }
 
+function chatEscapeHtml(str) {
+  if (str == null) return '';
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(String(str)));
+  return div.innerHTML;
+}
+
 function addChatMsg(who, text) {
   const body = document.getElementById('chatBody');
   const d = document.createElement('div');
@@ -41,6 +48,10 @@ function addChatMsg(who, text) {
   d.innerHTML = text;
   body.appendChild(d);
   body.scrollTop = body.scrollHeight;
+}
+
+function safeChatMsg(who, text) {
+  addChatMsg(who, chatEscapeHtml(text));
 }
 
 function showChatOptions(options, key) {
@@ -97,20 +108,31 @@ function showChatTimeSlots() {
   const d = document.createElement('div');
   d.className = 'chat-options';
   const booked = new Set();
-  try {
-    const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-    local.filter(a => a.date === chatState.data.date).forEach(a => booked.add(a.time));
-  } catch (e) {}
-  chatTimes.forEach(t => {
-    const past2h = isSlotPast2Hours(t, chatState.data.date);
-    const b = document.createElement('button');
-    b.className = 'chat-opt-btn' + (booked.has(t) || past2h ? ' disabled' : '');
-    b.textContent = t + (past2h ? ' (too soon)' : '');
-    if (!booked.has(t) && !past2h) b.onclick = () => handleChatChoice('time', t);
-    d.appendChild(b);
-  });
-  body.appendChild(d);
-  body.scrollTop = body.scrollHeight;
+  const loadSlots = async () => {
+    if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
+      try {
+        const remote = await SupabaseDB.getAppointments();
+        remote.filter(a => a.date === chatState.data.date).forEach(a => booked.add(a.time));
+      } catch (e) {
+        const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
+        local.filter(a => a.date === chatState.data.date).forEach(a => booked.add(a.time));
+      }
+    } else {
+      const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
+      local.filter(a => a.date === chatState.data.date).forEach(a => booked.add(a.time));
+    }
+    chatTimes.forEach(t => {
+      const past2h = isSlotPast2Hours(t, chatState.data.date);
+      const b = document.createElement('button');
+      b.className = 'chat-opt-btn' + (booked.has(t) || past2h ? ' disabled' : '');
+      b.textContent = t + (past2h ? ' (too soon)' : '');
+      if (!booked.has(t) && !past2h) b.onclick = () => handleChatChoice('time', t);
+      d.appendChild(b);
+    });
+    body.appendChild(d);
+    body.scrollTop = body.scrollHeight;
+  };
+  loadSlots();
 }
 
 function showChatNameInput() {
@@ -188,12 +210,39 @@ async function handleChatChoice(key, value) {
     setTimeout(() => showChatNameInput(), 900);
     chatState.step = 5;
   } else if (key === 'name') {
-    setTimeout(() => addChatMsg('bot', 'Nice to meet you, <b>' + htmlEscape(value) + '</b>! Last step \u2014 your phone number:'), 400);
-    setTimeout(() => showChatPhoneInput(), 900);
+    setTimeout(() => {
+      addChatMsg('bot', 'Nice to meet you, <b>' + htmlEscape(value) + '</b>!');
+      setTimeout(() => {
+        addChatMsg('bot', 'Before we proceed, we need your consent to collect and process your personal and health data for appointment scheduling. By continuing, you agree to our <a href="privacy.html" target="_blank" style="color:var(--gold);text-decoration:underline;">Privacy Policy</a>.');
+        setTimeout(() => showChatOptions(['I Consent \u2705', 'Cancel \u2715'], 'consent'), 600);
+      }, 500);
+    }, 400);
     chatState.step = 6;
+  } else if (key === 'consent') {
+    if (value.startsWith('Cancel')) {
+      addChatMsg('bot', 'Booking cancelled. Your data will not be stored.');
+      setTimeout(() => {
+        document.querySelectorAll('.chat-options').forEach(el => el.remove());
+        addChatMsg('bot', 'Is there anything else I can help with?');
+        setTimeout(() => showChatOptions(['Book Appointment', 'Close'], 'restart'), 600);
+      }, 500);
+      chatState.step = 0;
+      return;
+    }
+    chatState.data.consent = true;
+    setTimeout(() => addChatMsg('bot', 'Last step \u2014 your phone number:'), 400);
+    setTimeout(() => showChatPhoneInput(), 900);
+    chatState.step = 7;
   } else if (key === 'phone') {
     addChatMsg('bot', '\u23F3 Booking your appointment...');
     await submitChatBooking();
+  } else if (key === 'restart') {
+    document.querySelectorAll('.chat-options').forEach(el => el.remove());
+    if (value.startsWith('Book')) {
+      resetChat();
+    } else {
+      toggleChat();
+    }
   }
 }
 
@@ -209,22 +258,45 @@ async function submitChatBooking() {
       notes: '', created: new Date().toISOString()
     };
 
-    let savedRemote = false;
     if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
       try {
         await SupabaseDB.addAppointment(apt);
-        savedRemote = true;
-      } catch (e) { console.warn('Chat Supabase save failed:', e); }
-    }
-
-    const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-    local.unshift(apt);
-    localStorage.setItem('pd_appointments', JSON.stringify(local));
-
-    const existing = JSON.parse(localStorage.getItem('pd_patients') || '[]');
-    if (!existing.find(p => p.phone === d.phone)) {
-      existing.unshift({ id:'PD-'+crypto.randomUUID().slice(0, 8), name:sanitizeName(d.name), phone:sanitizePhone(d.phone), email:'', treatment:d.service, doctor:d.doctor, notes:'', created:new Date().toISOString() });
-      localStorage.setItem('pd_patients', JSON.stringify(existing));
+        const existingPatients = await SupabaseDB.getPatients();
+        const existingPatient = existingPatients.find(p => p.phone === d.phone);
+        let patientId;
+        if (!existingPatient) {
+          patientId = 'PD-' + crypto.randomUUID().slice(0, 8);
+          const patientData = {
+            id: patientId, name: sanitizeName(d.name), phone: sanitizePhone(d.phone),
+            email: '', dob: null, gender: null, blood: null, address: null,
+            treatment: d.service, doctor: d.doctor, history: null, notes: '',
+            created: new Date().toISOString()
+          };
+          await SupabaseDB.addPatient(patientData);
+        } else {
+          patientId = existingPatient.id;
+        }
+        if (d.consent) {
+          await SupabaseDB.addPatientConsent({
+            patientId,
+            consentType: 'data_collection',
+            consentGiven: true,
+            consentText: 'Patient consented to data collection for appointment scheduling and treatment purposes via chatbot'
+          });
+        }
+      } catch (e) {
+        console.error('Chat booking save failed:', e);
+        throw new Error('Could not save booking. Please try again.');
+      }
+    } else {
+      const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
+      local.unshift(apt);
+      localStorage.setItem('pd_appointments', JSON.stringify(local));
+      const existing = JSON.parse(localStorage.getItem('pd_patients') || '[]');
+      if (!existing.find(p => p.phone === d.phone)) {
+        existing.unshift({ id:'PD-'+crypto.randomUUID().slice(0, 8), name:sanitizeName(d.name), phone:sanitizePhone(d.phone), email:'', treatment:d.service, doctor:d.doctor, notes:'', created:new Date().toISOString() });
+        localStorage.setItem('pd_patients', JSON.stringify(existing));
+      }
     }
 
     document.querySelectorAll('.chat-options').forEach(el => el.remove());

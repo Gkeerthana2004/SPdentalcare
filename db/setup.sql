@@ -160,11 +160,65 @@ CREATE POLICY "Doctors can delete OPG reports"
   USING (auth.role() = 'authenticated');
 
 -- =============================================================
+-- Audit Logs table (track access to patient data)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  user_email TEXT,
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id TEXT,
+  entity_name TEXT,
+  details JSONB DEFAULT '{}'::jsonb,
+  ip_address TEXT,
+  created TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Doctors can view audit logs"
+  ON public.audit_logs FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Doctors can insert audit logs"
+  ON public.audit_logs FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+GRANT INSERT, SELECT ON public.audit_logs TO authenticated;
+
+-- =============================================================
+-- Patient Consent table (track consent for data collection)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS public.patient_consents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id TEXT REFERENCES public.patients(id) ON DELETE CASCADE,
+  consent_type TEXT NOT NULL,
+  consent_given BOOLEAN NOT NULL DEFAULT false,
+  consent_text TEXT,
+  ip_address TEXT,
+  created TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.patient_consents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Doctors can view consents"
+  ON public.patient_consents FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Anyone can insert consent"
+  ON public.patient_consents FOR INSERT
+  WITH CHECK (true);
+
+GRANT INSERT, SELECT ON public.patient_consents TO authenticated;
+
+-- =============================================================
 -- Grant access to Data API
 -- =============================================================
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
 GRANT INSERT ON public.appointments TO anon;
+GRANT INSERT ON public.patient_consents TO anon;
 GRANT INSERT, UPDATE, DELETE ON public.patients TO authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.appointments TO authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.orthodontics TO authenticated;

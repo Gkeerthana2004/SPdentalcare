@@ -48,45 +48,49 @@ function togglePasswordVisibility() {
   }
 }
 
-function mergeById(localItems, remoteItems) {
-  const map = new Map();
-  for (const item of localItems) map.set(item.id, item);
-  for (const item of remoteItems) map.set(item.id, item);
-  return Array.from(map.values());
+const PHI_KEYS = ['patients', 'appointments', 'ortho', 'opg_reports'];
+
+async function logAudit(action, entityType, entityId, entityName, details = {}) {
+  if (SupabaseDB.isConfigured()) {
+    try {
+      await SupabaseDB.addAuditLog({ action, entityType, entityId, entityName, details });
+    } catch (e) {
+      console.warn('Audit log failed:', e);
+    }
+  }
 }
 
 const DB = {
   async get(k) {
-    const localData = getLocal(k);
     if (SupabaseDB.isConfigured()) {
       try {
-        let supabaseData = [];
+        let data = [];
         switch(k) {
-          case 'patients': supabaseData = await SupabaseDB.getPatients(); break;
-          case 'appointments': supabaseData = await SupabaseDB.getAppointments(); break;
-          case 'ortho': supabaseData = await SupabaseDB.getOrthodontics(); break;
-          case 'opg_reports': supabaseData = await SupabaseDB.getOPGReports(); break;
+          case 'patients': data = await SupabaseDB.getPatients(); break;
+          case 'appointments': data = await SupabaseDB.getAppointments(); break;
+          case 'ortho': data = await SupabaseDB.getOrthodontics(); break;
+          case 'opg_reports': data = await SupabaseDB.getOPGReports(); break;
         }
-        return mergeById(localData, supabaseData);
+        return data;
       } catch (e) {
-        console.warn('DB.get Supabase error, using local:', e);
+        console.warn('DB.get Supabase error:', e);
+        throw e;
       }
     }
-    return localData;
+    return getLocal(k);
   },
 
   async push(k, item) {
-    const localData = getLocal(k);
-    localData.unshift(item);
-    setLocal(k, localData);
     if (SupabaseDB.isConfigured()) {
       try {
+        let result;
         switch(k) {
-          case 'patients': return await SupabaseDB.addPatient(item);
-          case 'appointments': return await SupabaseDB.addAppointment(item);
-          case 'ortho': return await SupabaseDB.addOrthodonticCase(item);
-          case 'opg_reports': return await SupabaseDB.addOPGReport(item);
+          case 'patients': result = await SupabaseDB.addPatient(item); break;
+          case 'appointments': result = await SupabaseDB.addAppointment(item); break;
+          case 'ortho': result = await SupabaseDB.addOrthodonticCase(item); break;
+          case 'opg_reports': result = await SupabaseDB.addOPGReport(item); break;
         }
+        return result || item;
       } catch (e) {
         if (e.code === '23505' || (e.message && e.message.includes('duplicate'))) {
           try {
@@ -94,39 +98,47 @@ const DB = {
               case 'patients': return await SupabaseDB.updatePatient(item.id, item);
               case 'appointments': return await SupabaseDB.updateAppointment(item.id, item);
               case 'ortho': return await SupabaseDB.updateOrthodonticCase(item.id, item);
+              case 'opg_reports': return await SupabaseDB.updateOPGReport(item.id, item);
             }
           } catch (_) {}
         }
-        console.warn('DB.push Supabase error, saved locally:', e);
+        throw e;
       }
     }
+    const localData = getLocal(k);
+    const existingIdx = localData.findIndex(x => x.id === item.id);
+    if (existingIdx >= 0) {
+      localData[existingIdx] = item;
+    } else {
+      localData.unshift(item);
+    }
+    setLocal(k, localData);
     return item;
   },
 
   async update(k, id, changes) {
-    const localData = getLocal(k);
-    const idx = localData.findIndex(x => x.id === id);
-    if (idx >= 0) {
-      Object.assign(localData[idx], changes);
-      setLocal(k, localData);
-    }
     if (SupabaseDB.isConfigured()) {
       try {
         switch(k) {
           case 'patients': await SupabaseDB.updatePatient(id, changes); break;
           case 'appointments': await SupabaseDB.updateAppointment(id, changes); break;
           case 'ortho': await SupabaseDB.updateOrthodonticCase(id, changes); break;
+          case 'opg_reports': await SupabaseDB.updateOPGReport(id, changes); break;
         }
+        return;
       } catch (e) {
-        console.warn('DB.update Supabase error:', e);
+        throw e;
       }
+    }
+    const localData = getLocal(k);
+    const idx = localData.findIndex(x => x.id === id);
+    if (idx >= 0) {
+      Object.assign(localData[idx], changes);
+      setLocal(k, localData);
     }
   },
 
   async delete(k, id) {
-    let localData = getLocal(k);
-    localData = localData.filter(x => x.id !== id);
-    setLocal(k, localData);
     if (SupabaseDB.isConfigured()) {
       try {
         switch(k) {
@@ -135,14 +147,17 @@ const DB = {
           case 'ortho': await SupabaseDB.deleteOrthodonticCase(id); break;
           case 'opg_reports': await SupabaseDB.deleteOPGReport(id); break;
         }
+        return;
       } catch (e) {
-        console.warn('DB.delete Supabase error:', e);
+        throw e;
       }
     }
+    let localData = getLocal(k);
+    localData = localData.filter(x => x.id !== id);
+    setLocal(k, localData);
   },
 
   async set(k, v) {
-    setLocal(k, v);
     if (SupabaseDB.isConfigured() && Array.isArray(v)) {
       for (const item of v) {
         if (!item.id) continue;
@@ -157,40 +172,51 @@ const DB = {
           console.warn('DB.set Supabase sync error:', e);
         }
       }
+      return v;
+    } else {
+      setLocal(k, v);
     }
     return v;
   }
 };
 
 async function seedData() {
-  const existingPatients = getLocal('patients');
-  if (existingPatients.length > 0) return;
+  if (SupabaseDB.isConfigured()) {
+    try {
+      const existing = await SupabaseDB.getPatients();
+      if (existing && existing.length > 0) return;
+    } catch (e) {
+      console.warn('Could not check existing data:', e);
+    }
+  } else {
+    const existingPatients = getLocal('patients');
+    if (existingPatients.length > 0) return;
+  }
   const patientsData = [
-    { id:'PD-0001', name:'Kavitha Rajan', dob:'1988-05-14', gender:'Female', blood:'B+', phone:'+91 98401 11111', email:'kavitha@email.com', address:'Anna Nagar, Chennai', treatment:'Orthodontics', doctor:'Dr. Poornima Gopiraj', history:'No known allergies', notes:'Class II malocclusion', created: new Date(Date.now()-86400000*10).toISOString() },
-    { id:'PD-0002', name:'Suresh Kumar', dob:'1995-11-22', gender:'Male', blood:'O+', phone:'+91 98402 22222', email:'suresh@email.com', address:'T.Nagar, Chennai', treatment:'Dental Implants', doctor:'Dr. Lakshmi Rathan', history:'Diabetic - controlled', notes:'Missing tooth #36', created: new Date(Date.now()-86400000*5).toISOString() },
-    { id:'PD-0003', name:'Anitha Devi', dob:'2002-03-08', gender:'Female', blood:'A+', phone:'+91 98403 33333', email:'anitha@email.com', address:'Velachery, Chennai', treatment:'General Check-up', doctor:'Dr. Saranya Mohan', history:'None', notes:'Routine annual check-up', created: new Date(Date.now()-86400000*2).toISOString() },
+    { id:'PD-TEST-001', name:'Test Patient Alpha', dob:'1990-01-15', gender:'Female', blood:'O+', phone:'+91 90000 00001', email:'test.alpha@example.com', address:'123 Test Street, Chennai', treatment:'General Check-up', doctor:'Dr. Poornima Gopiraj', history:'No known allergies', notes:'Demo data - not a real patient', created: new Date(Date.now()-86400000*10).toISOString() },
+    { id:'PD-TEST-002', name:'Test Patient Beta', dob:'1985-06-20', gender:'Male', blood:'A+', phone:'+91 90000 00002', email:'test.beta@example.com', address:'456 Demo Lane, Chennai', treatment:'Dental Implants', doctor:'Dr. Lakshmi Rathan', history:'None', notes:'Demo data - not a real patient', created: new Date(Date.now()-86400000*5).toISOString() },
+    { id:'PD-TEST-003', name:'Test Patient Gamma', dob:'2000-09-10', gender:'Female', blood:'B+', phone:'+91 90000 00003', email:'test.gamma@example.com', address:'789 Sample Road, Chennai', treatment:'Orthodontics', doctor:'Dr. Saranya Mohan', history:'None', notes:'Demo data - not a real patient', created: new Date(Date.now()-86400000*2).toISOString() },
   ];
   const today = new Date().toISOString().split('T')[0];
   const appointmentsData = [
-    { id:'APT-001', name:'Kavitha Rajan', phone:'+91 98401 11111', date:today, time:'5:00 PM', service:'Orthodontics', doctor:'Dr. Poornima Gopiraj', status:'Confirmed', visittype:'Follow-up', notes:'Wire adjustment visit 3', created:new Date().toISOString() },
-    { id:'APT-002', name:'Suresh Kumar', phone:'+91 98402 22222', date:today, time:'6:00 PM', service:'Dental Implants', doctor:'Dr. Lakshmi Rathan', status:'Pending', visittype:'Follow-up', notes:'Post-op check', created:new Date().toISOString() },
-    { id:'APT-003', name:'Anitha Devi', phone:'+91 98403 33333', date:today, time:'7:30 PM', service:'General Check-up', doctor:'Dr. Saranya Mohan', status:'Confirmed', visittype:'First Visit', notes:'', created:new Date().toISOString() },
+    { id:'APT-TEST-001', name:'Test Patient Alpha', phone:'+91 90000 00001', date:today, time:'5:00 PM', service:'General Check-up', doctor:'Dr. Poornima Gopiraj', status:'Confirmed', visittype:'First Visit', notes:'Demo appointment', created:new Date().toISOString() },
+    { id:'APT-TEST-002', name:'Test Patient Beta', phone:'+91 90000 00002', date:today, time:'6:00 PM', service:'Dental Implants', doctor:'Dr. Lakshmi Rathan', status:'Pending', visittype:'Follow-up', notes:'Demo appointment', created:new Date().toISOString() },
+    { id:'APT-TEST-003', name:'Test Patient Gamma', phone:'+91 90000 00003', date:today, time:'7:30 PM', service:'Orthodontics', doctor:'Dr. Saranya Mohan', status:'Confirmed', visittype:'First Visit', notes:'Demo appointment', created:new Date().toISOString() },
   ];
   const orthoData = [
-    { id:'OT-001', pid:'PD-0001', name:'Kavitha Rajan', age:36, gender:'Female', phone:'+91 98401 11111', type:'Metal Braces', start:'2024-06-01', end:'2025-12-01', doctor:'Dr. Poornima Gopiraj', diag:'Class II Division 1 malocclusion with severe crowding', plan:'Upper and lower fixed appliances, extraction of 14,24. Total 18 months', status:'Active', progress:55, visits:[
-      { date:'2024-06-01', type:'Regular Adjustment', notes:'Initial banding and bonding. 0.014 NiTi wire placed.', progress:5, next:'2024-07-01' },
-      { date:'2024-07-01', type:'Wire Change', notes:'0.018 NiTi. Good initial alignment. Patient cooperative.', progress:20, next:'2024-08-01' },
-      { date:'2024-09-15', type:'Regular Adjustment', notes:'0.019x0.025 SS wire. Space closure started.', progress:40, next:'2024-11-01' },
-      { date:'2025-01-10', type:'Progress Review', notes:'55% progress. Excellent cooperation. Finishing phase starting.', progress:55, next:'2025-03-01' },
+    { id:'OT-TEST-001', pid:'PD-TEST-003', name:'Test Patient Gamma', age:25, gender:'Female', phone:'+91 90000 00003', type:'Metal Braces', start:'2024-06-01', end:'2025-12-01', doctor:'Dr. Saranya Mohan', diag:'Demo orthodontic case - not real', plan:'Demo treatment plan for testing', status:'Active', progress:55, visits:[
+      { date:'2024-06-01', type:'Regular Adjustment', notes:'Demo visit data', progress:5, next:'2024-07-01' },
+      { date:'2024-07-01', type:'Wire Change', notes:'Demo visit data', progress:20, next:'2024-08-01' },
     ]},
   ];
-  setLocal('patients', patientsData);
-  setLocal('appointments', appointmentsData);
-  setLocal('ortho', orthoData);
   if (SupabaseDB.isConfigured()) {
     for (const p of patientsData) { await SupabaseDB.addPatient(p).catch(() => {}); }
     for (const a of appointmentsData) { await SupabaseDB.addAppointment(a).catch(() => {}); }
     for (const o of orthoData) { await SupabaseDB.addOrthodonticCase(o).catch(() => {}); }
+  } else {
+    setLocal('patients', patientsData);
+    setLocal('appointments', appointmentsData);
+    setLocal('ortho', orthoData);
   }
 }
 
@@ -256,13 +282,14 @@ async function handleLogin() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     if (typeof lucide !== 'undefined') lucide.createIcons();
+    initSessionTimeout();
     await refreshAll();
     toast('👋', 'Welcome back!', currentUser.name + ' — ' + currentUser.role, 'success');
   } catch (e) {
     if (e.message && e.message.includes('Invalid login credentials')) {
       showLoginError('Invalid email or password. Please try again.');
     } else {
-      showLoginError(e.message || 'Login failed. Please try again.');
+      showLoginError(sanitizeErrorMessage(e));
     }
     document.getElementById('loginPass').value = '';
   } finally {
@@ -291,6 +318,7 @@ async function doLogout() {
   if (SupabaseDB.isConfigured()) {
     try { await SupabaseDB.logout(); } catch (e) {}
   }
+  clearSessionTimeout();
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginUser').value = '';
@@ -298,13 +326,46 @@ async function doLogout() {
   document.getElementById('loginErr').style.display = 'none';
 }
 
+const SESSION_TIMEOUT_MS = 15 * 60 * 1000;
+let sessionTimeoutId = null;
+let sessionWarningId = null;
+
+function clearSessionTimeout() {
+  if (sessionTimeoutId) { clearTimeout(sessionTimeoutId); sessionTimeoutId = null; }
+  if (sessionWarningId) { clearTimeout(sessionWarningId); sessionWarningId = null; }
+}
+
+function resetSessionTimeout() {
+  clearSessionTimeout();
+  sessionWarningId = setTimeout(() => {
+    if (confirm('Your session will expire in 1 minute due to inactivity. Click OK to stay logged in.')) {
+      resetSessionTimeout();
+    }
+  }, SESSION_TIMEOUT_MS - 60000);
+  sessionTimeoutId = setTimeout(() => {
+    toast('\u23F0','Session Expired','You have been logged out due to inactivity.');
+    doLogout();
+  }, SESSION_TIMEOUT_MS);
+}
+
+let sessionListenersAdded = false;
+
+function initSessionTimeout() {
+  if (!sessionListenersAdded) {
+    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+    events.forEach(e => document.addEventListener(e, resetSessionTimeout, { passive: true }));
+    sessionListenersAdded = true;
+  }
+  resetSessionTimeout();
+}
+
 async function showPage(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if (el) el.classList.add('active');
-  const titles = { overview:'Overview Dashboard', appointments:'Appointment Management', patients:'Patient Records', ortho:'Ortho Treatment Tracker', 'add-patient':'Add New Patient', holidays:'Clinic Holidays' };
-  const icons = { overview:'📊', appointments:'📅', patients:'👥', ortho:'😁', 'add-patient':'➕', holidays:'🎉' };
+  const titles = { overview:'Overview Dashboard', appointments:'Appointment Management', patients:'Patient Records', ortho:'Ortho Treatment Tracker', 'add-patient':'Add New Patient', holidays:'Clinic Holidays', settings:'Data Settings' };
+  const icons = { overview:'📊', appointments:'📅', patients:'👥', ortho:'😁', 'add-patient':'➕', holidays:'🎉', settings:'⚙️' };
   const t = titles[id] || id;
   document.getElementById('pageTitle').innerHTML = icons[id] ? htmlEscape(icons[id]) + ' <span style="font-style:italic;color:var(--teal)">' + htmlEscape(t.split(' ').slice(-1)[0]) + '</span> ' + htmlEscape(t.split(' ').slice(0,-1).join(' ')) : htmlEscape(t);
   if (id==='appointments') await renderAppointments();
@@ -312,6 +373,7 @@ async function showPage(id, el) {
   if (id==='ortho') await renderOrtho();
   if (id==='overview') await renderOverview();
   if (id==='holidays') renderHolidays();
+  if (id==='settings') loadRetentionSettings();
 }
 
 async function renderOverview() {
@@ -367,7 +429,7 @@ async function saveAppointment() {
   const phone = document.getElementById('am_phone').value.trim();
   const date = document.getElementById('am_date').value;
   const time = document.getElementById('am_time').value;
-  if (!name || !phone || !date) { toast('\u26A0\uFE0F','Missing fields','Name, phone and date are required','error'); return; }
+  if (!name || !phone || !date || !time) { toast('\u26A0\uFE0F','Missing fields','Name, phone, date and time are required','error'); return; }
   if (isHoliday(date)) { toast('\uD83C\uDF89','Closure Notice','Clinic is closed on this date','error'); return; }
   try {
     checkRateLimit();
@@ -382,13 +444,14 @@ async function saveAppointment() {
       created: new Date().toISOString()
     };
     await DB.push('appointments', apt);
+    await logAudit('create', 'appointment', id, sanitizeName(name), { date, time, service: document.getElementById('am_service').value });
     closeModal('apptModal');
     document.getElementById('am_name').value=''; document.getElementById('am_phone').value=''; document.getElementById('am_notes').value='';
     await renderAppointments(); await renderOverview();
     toast('\u2705','Appointment Saved!',htmlEscape(name) + ' \u2014 ' + htmlEscape(time) + ' on ' + htmlEscape(formatDate(date)),'success');
   } catch (e) {
     console.error('Error saving appointment:', e);
-    toast('\u274C','Save Failed',e.message || 'Could not save appointment','error');
+    toast('\u274C','Save Failed',sanitizeErrorMessage(e) || 'Could not save appointment','error');
   }
 }
 
@@ -414,16 +477,18 @@ async function renderAppointments() {
 async function markComplete(id) {
   try {
     await DB.update('appointments', id, { status: 'Completed' });
+    await logAudit('update', 'appointment', id, null, { status: 'Completed' });
     await renderAppointments(); await renderOverview();
     toast('\u2705','Marked Complete','Appointment updated','success');
   } catch (e) {
     console.error('Error marking complete:', e);
-    toast('\u274C','Update Failed','Could not update appointment','error');
+    toast('\u274C','Update Failed',sanitizeErrorMessage(e) || 'Could not update appointment','error');
   }
 }
 async function deleteAppt(id) {
   if (!confirm('Delete this appointment?')) return;
   try {
+    await logAudit('delete', 'appointment', id, null);
     await DB.delete('appointments', id);
     await renderAppointments(); await renderOverview();
     toast('\uD83D\uDDD1\uFE0F','Deleted','Appointment removed');
@@ -454,6 +519,7 @@ async function addPatient() {
       created: new Date().toISOString()
     };
     await DB.push('patients', p);
+    await logAudit('create', 'patient', id, sanitizeName(name));
     ['np_name','np_dob','np_phone','np_email','np_address','np_history','np_notes'].forEach(f => document.getElementById(f).value='');
     document.getElementById('np_gender').value=''; document.getElementById('np_treatment').value='';
     toast('\u2705','Patient Added!',htmlEscape(name) + ' \u2014 ' + id,'success');
@@ -461,7 +527,7 @@ async function addPatient() {
     if (treatment === 'Orthodontics') setTimeout(() => toast('\uD83D\uDCA1','Tip','This patient has Orthodontics \u2014 add an Ortho Case from the tracker!'), 2500);
   } catch (e) {
     console.error('Error adding patient:', e);
-    toast('\u274C','Add Failed',e.message || 'Could not add patient','error');
+    toast('\u274C','Add Failed',sanitizeErrorMessage(e) || 'Could not add patient','error');
   }
 }
 
@@ -515,12 +581,13 @@ async function savePatientEdit(pid) {
   try {
     checkRateLimit();
     await DB.update('patients', pid, updates);
+    await logAudit('update', 'patient', pid, updates.name);
     document.querySelector('.modal-overlay:last-child').remove();
     await renderPatients(); await renderOverview();
     toast('\u2705','Patient Updated!',updates.name,'success');
   } catch (e) {
     console.error('Error updating patient:', e);
-    toast('\u274C','Update Failed',e.message||'Could not update patient','error');
+    toast('\u274C','Update Failed',sanitizeErrorMessage(e) || 'Could not update patient','error');
   }
 }
 
@@ -528,7 +595,8 @@ async function viewPatient(pid) {
   const patients = await DB.get('patients') || [];
   const p = patients.find(x => x.id===pid);
   if (!p) return;
-  const apts = (await DB.get('appointments')||[]).filter(a => a.name===p.name);
+  await logAudit('view', 'patient', pid, p.name);
+  const apts = (await DB.get('appointments')||[]).filter(a => a.name===p.name && a.phone===p.phone);
   const ortho = (await DB.get('ortho')||[]).filter(o => o.pid===pid);
 
   const body = document.getElementById('patientViewBody');
@@ -560,6 +628,9 @@ async function viewPatient(pid) {
 async function deletePatient(pid) {
   if (!confirm('Delete this patient? This cannot be undone.')) return;
   try {
+    const patients = await DB.get('patients') || [];
+    const p = patients.find(x => x.id === pid);
+    await logAudit('delete', 'patient', pid, p?.name);
     await DB.delete('patients', pid);
     await renderPatients(); await renderOverview();
     toast('\uD83D\uDDD1\uFE0F','Deleted','Patient record removed');
@@ -597,13 +668,14 @@ async function saveOrthoCase() {
       status:'Active', progress:0, visits:[]
     };
     await DB.push('ortho', o);
+    await logAudit('create', 'ortho_case', id, sanitizeName(name), { type: document.getElementById('om_type').value });
     closeModal('orthoModal');
     ['om_name','om_pid','om_age','om_phone','om_end','om_diag','om_plan'].forEach(f => document.getElementById(f).value='');
     await renderOrtho(); await renderOverview();
     toast('\u2705','Ortho Case Created!',htmlEscape(name) + ' \u2014 ' + htmlEscape(o.type),'success');
   } catch (e) {
     console.error('Error saving ortho case:', e);
-    toast('\u274C','Save Failed',e.message || 'Could not save ortho case','error');
+    toast('\u274C','Save Failed',sanitizeErrorMessage(e) || 'Could not save ortho case','error');
   }
 }
 
@@ -626,17 +698,20 @@ async function saveOrthoVisit() {
     if (i<0) return;
     const prog = parseInt(document.getElementById('ov_progress').value)||ortho[i].progress;
     const visit = { date, type: document.getElementById('ov_type').value, notes, progress:prog, next: document.getElementById('ov_next').value };
-    ortho[i].visits = ortho[i].visits||[];
-    ortho[i].visits.unshift(visit);
-    ortho[i].progress = prog;
-    ortho[i].status = document.getElementById('ov_status').value;
-    await DB.set('ortho', ortho);
+    const updatedVisits = [visit, ...(ortho[i].visits||[])];
+    const changes = {
+      visits: updatedVisits,
+      progress: prog,
+      status: document.getElementById('ov_status').value
+    };
+    await DB.update('ortho', activeOrthoId, changes);
+    await logAudit('update', 'ortho_case', activeOrthoId, null, { progress: prog, visitType: document.getElementById('ov_type').value });
     closeModal('orthoVisitModal');
     await renderOrtho(); await renderOverview();
     toast('\u2705','Visit Recorded!','Progress: ' + prog + '%','success');
   } catch (e) {
     console.error('Error saving ortho visit:', e);
-    toast('\u274C','Save Failed',e.message || 'Could not save visit','error');
+    toast('\u274C','Save Failed',sanitizeErrorMessage(e) || 'Could not save visit','error');
   }
 }
 
@@ -667,6 +742,7 @@ async function renderOrtho() {
 async function deleteOrtho(id) {
   if (!confirm('Delete this ortho case?')) return;
   try {
+    await logAudit('delete', 'ortho_case', id, null);
     await DB.delete('ortho', id);
     await renderOrtho(); await renderOverview();
     toast('\uD83D\uDDD1\uFE0F','Deleted','Ortho case removed');
@@ -841,6 +917,7 @@ async function saveOPG() {
       created: new Date().toISOString()
     };
     await DB.push('opg_reports', report);
+    await logAudit('create', 'opg_report', id, sanitizeName(title), { orthoId: activeOPGOrthoId });
     document.getElementById('opg_title').value = '';
     document.getElementById('opg_notes').value = '';
     document.getElementById('opgImageData').value = '';
@@ -850,13 +927,14 @@ async function saveOPG() {
     toast('\u2705','OPG Saved!',htmlEscape(title) + ' \u2014 ' + htmlEscape(formatDate(date)),'success');
   } catch (e) {
     console.error('Error saving OPG report:', e);
-    toast('\u274C','Save Failed',e.message || 'Could not save OPG report','error');
+    toast('\u274C','Save Failed',sanitizeErrorMessage(e) || 'Could not save OPG report','error');
   }
 }
 
 async function deleteOPG(id) {
   if (!confirm('Delete this OPG report?')) return;
   try {
+    await logAudit('delete', 'opg_report', id, null);
     await DB.delete('opg_reports', id);
     renderOPGs(activeOPGOrthoId);
     toast('\uD83D\uDDD1\uFE0F','Deleted','OPG report removed');
@@ -886,6 +964,18 @@ document.addEventListener('click', function(e) {
   else if (action === 'deleteOPG') deleteOPG(id);
   else if (action === 'deleteHoliday') deleteHoliday(id);
 });
+
+function sanitizeErrorMessage(error) {
+  if (!error) return 'An unexpected error occurred. Please try again.';
+  const msg = error.message || error.toString();
+  if (msg.includes('Invalid login credentials')) return 'Invalid email or password. Please try again.';
+  if (msg.includes('Password should be at least')) return 'Password does not meet requirements.';
+  if (msg.includes('User already registered')) return 'An account with this email already exists.';
+  if (msg.includes('network') || msg.includes('fetch')) return 'Network error. Please check your connection.';
+  if (msg.includes('timeout')) return 'Request timed out. Please try again.';
+  if (msg.includes('JWT') || msg.includes('token')) return 'Session expired. Please log in again.';
+  return 'An error occurred. Please try again.';
+}
 
 function calcAge(dob) {
   if (!dob) return '\u2014';
@@ -926,7 +1016,7 @@ function addHoliday() {
   const holidays = getHolidays();
   if (holidays.some(h => h.date === date)) { toast('\u26A0\uFE0F','Already set','This date is already a holiday','error'); return; }
   holidays.push({ date, reason: reason || 'Closure' });
-  localStorage.setItem('pd_holidays', JSON.stringify(holidays));
+  setLocal('holidays', holidays);
   document.getElementById('holidayDate').value = '';
   document.getElementById('holidayReason').value = '';
   renderHolidays();
@@ -937,9 +1027,191 @@ function deleteHoliday(date) {
   if (!confirm('Remove holiday on ' + formatDate(date) + '?')) return;
   let holidays = getHolidays();
   holidays = holidays.filter(h => h.date !== date);
-  localStorage.setItem('pd_holidays', JSON.stringify(holidays));
+  setLocal('holidays', holidays);
   renderHolidays();
   toast('\uD83D\uDDD1\uFE0F','Removed',htmlEscape(formatDate(date)) + ' is no longer a holiday');
+}
+
+function loadRetentionSettings() {
+  const settings = JSON.parse(localStorage.getItem('pd_retention_settings') || '{}');
+  document.getElementById('retentionPatients').value = settings.patientYears || 3;
+  document.getElementById('retentionAppointments').value = settings.appointmentYears || 2;
+}
+
+function saveRetentionSettings() {
+  const settings = {
+    patientYears: parseInt(document.getElementById('retentionPatients').value) || 3,
+    appointmentYears: parseInt(document.getElementById('retentionAppointments').value) || 2,
+    updatedAt: new Date().toISOString()
+  };
+  localStorage.setItem('pd_retention_settings', JSON.stringify(settings));
+  toast('\u2705','Settings Saved','Data retention policy updated');
+}
+
+async function runDataCleanup() {
+  if (!confirm('This will permanently delete old records. Continue?')) return;
+  
+  const settings = JSON.parse(localStorage.getItem('pd_retention_settings') || '{}');
+  const patientYears = settings.patientYears || 3;
+  const appointmentYears = settings.appointmentYears || 2;
+  
+  const patientCutoff = new Date();
+  patientCutoff.setFullYear(patientCutoff.getFullYear() - patientYears);
+  
+  const appointmentCutoff = new Date();
+  appointmentCutoff.setFullYear(appointmentCutoff.getFullYear() - appointmentYears);
+  
+  let patientsDeleted = 0;
+  let appointmentsDeleted = 0;
+  
+  try {
+    if (SupabaseDB.isConfigured()) {
+      const patients = await SupabaseDB.getPatients();
+      for (const p of patients) {
+        if (p.created && new Date(p.created) < patientCutoff) {
+          await SupabaseDB.deletePatient(p.id).catch(() => {});
+          patientsDeleted++;
+        }
+      }
+      
+      const appointments = await SupabaseDB.getAppointments();
+      for (const a of appointments) {
+        if (a.created && new Date(a.created) < appointmentCutoff) {
+          await SupabaseDB.deleteAppointment(a.id).catch(() => {});
+          appointmentsDeleted++;
+        }
+      }
+    } else {
+      let patients = getLocal('patients');
+      const originalPatientCount = patients.length;
+      patients = patients.filter(p => !(p.created && new Date(p.created) < patientCutoff));
+      patientsDeleted = originalPatientCount - patients.length;
+      setLocal('patients', patients);
+      
+      let appointments = getLocal('appointments');
+      const originalApptCount = appointments.length;
+      appointments = appointments.filter(a => !(a.created && new Date(a.created) < appointmentCutoff));
+      appointmentsDeleted = originalApptCount - appointments.length;
+      setLocal('appointments', appointments);
+    }
+    
+    const resultEl = document.getElementById('cleanupResult');
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px"><p style="font-size:13px;color:#166534;margin:0"><strong>Cleanup Complete</strong><br>Deleted ' + patientsDeleted + ' old patient records and ' + appointmentsDeleted + ' old appointment records.</p></div>';
+    
+    await logAudit('data_cleanup', 'system', null, null, { patientsDeleted, appointmentsDeleted, patientYears, appointmentYears });
+    
+    toast('\u2705','Cleanup Complete',patientsDeleted + ' patients and ' + appointmentsDeleted + ' appointments removed');
+    await refreshAll();
+  } catch (e) {
+    console.error('Cleanup error:', e);
+    toast('\u274C','Cleanup Failed','An error occurred during cleanup');
+  }
+}
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function exportAllData() {
+  try {
+    const data = {
+      exportDate: new Date().toISOString(),
+      clinicName: 'SP Dental Care',
+      version: '1.0'
+    };
+    
+    if (SupabaseDB.isConfigured()) {
+      data.patients = await SupabaseDB.getPatients();
+      data.appointments = await SupabaseDB.getAppointments();
+      data.orthodontics = await SupabaseDB.getOrthodontics();
+      data.opg_reports = await SupabaseDB.getOPGReports();
+    } else {
+      data.patients = getLocal('patients');
+      data.appointments = getLocal('appointments');
+      data.orthodontics = getLocal('ortho');
+      data.opg_reports = getLocal('opg_reports');
+    }
+    
+    const json = JSON.stringify(data, null, 2);
+    const filename = 'sp-dental-backup-' + new Date().toISOString().split('T')[0] + '.json';
+    downloadFile(filename, json, 'application/json');
+    
+    await logAudit('export', 'system', null, null, { recordCount: data.patients.length + data.appointments.length + data.orthodontics.length });
+    
+    const resultEl = document.getElementById('exportResult');
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px"><p style="font-size:13px;color:#166534;margin:0"><strong>Export Complete</strong><br>Downloaded ' + filename + '<br>Patients: ' + data.patients.length + ' | Appointments: ' + data.appointments.length + ' | Ortho Cases: ' + data.orthodontics.length + '</p></div>';
+    
+    toast('\u2705','Export Complete','Backup downloaded successfully');
+  } catch (e) {
+    console.error('Export error:', e);
+    toast('\u274C','Export Failed','An error occurred during export');
+  }
+}
+
+function exportPatientsCSV() {
+  try {
+    let patients;
+    if (SupabaseDB.isConfigured()) {
+      SupabaseDB.getPatients().then(p => {
+        patients = p;
+        downloadPatientsCSV(patients);
+      });
+    } else {
+      patients = getLocal('patients');
+      downloadPatientsCSV(patients);
+    }
+  } catch (e) {
+    toast('\u274C','Export Failed','An error occurred');
+  }
+}
+
+function downloadPatientsCSV(patients) {
+  const headers = ['ID', 'Name', 'DOB', 'Gender', 'Blood', 'Phone', 'Email', 'Address', 'Treatment', 'Doctor', 'History', 'Notes', 'Created'];
+  const rows = patients.map(p => [
+    p.id, p.name, p.dob, p.gender, p.blood, p.phone, p.email, p.address,
+    p.treatment, p.doctor, p.history, p.notes, p.created
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => '"' + String(c || '').replace(/"/g, '""') + '"').join(',')).join('\n');
+  downloadFile('sp-dental-patients-' + new Date().toISOString().split('T')[0] + '.csv', csv, 'text/csv');
+  toast('\u2705','Export Complete','Patients CSV downloaded');
+}
+
+function exportAppointmentsCSV() {
+  try {
+    let appointments;
+    if (SupabaseDB.isConfigured()) {
+      SupabaseDB.getAppointments().then(a => {
+        appointments = a;
+        downloadAppointmentsCSV(appointments);
+      });
+    } else {
+      appointments = getLocal('appointments');
+      downloadAppointmentsCSV(appointments);
+    }
+  } catch (e) {
+    toast('\u274C','Export Failed','An error occurred');
+  }
+}
+
+function downloadAppointmentsCSV(appointments) {
+  const headers = ['ID', 'Name', 'Phone', 'Email', 'Date', 'Time', 'Service', 'Doctor', 'Status', 'Visit Type', 'Notes', 'Created'];
+  const rows = appointments.map(a => [
+    a.id, a.name, a.phone, a.email, a.date, a.time, a.service, a.doctor,
+    a.status, a.visittype, a.notes, a.created
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => '"' + String(c || '').replace(/"/g, '""') + '"').join(',')).join('\n');
+  downloadFile('sp-dental-appointments-' + new Date().toISOString().split('T')[0] + '.csv', csv, 'text/csv');
+  toast('\u2705','Export Complete','Appointments CSV downloaded');
 }
 
 let toastTimer;

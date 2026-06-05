@@ -13,6 +13,31 @@ function htmlEscape(str) {
   return div.innerHTML;
 }
 
+function parseTime12h(timeStr) {
+  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return null;
+  let h = parseInt(match[1], 10);
+  const m = parseInt(match[2], 10);
+  const period = match[3].toUpperCase();
+  if (period === 'PM' && h !== 12) h += 12;
+  if (period === 'AM' && h === 12) h = 0;
+  return { h, m };
+}
+
+function isSlotPast2Hours(timeStr, dateStr) {
+  if (!dateStr || !timeStr) return false;
+  const now = new Date();
+  const slotDate = new Date(dateStr + 'T00:00:00');
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const slotDay = new Date(slotDate.getFullYear(), slotDate.getMonth(), slotDate.getDate());
+  if (slotDay.getTime() !== today.getTime()) return false;
+  const parsed = parseTime12h(timeStr);
+  if (!parsed) return false;
+  const slotTime = new Date(slotDate.getFullYear(), slotDate.getMonth(), slotDate.getDate(), parsed.h, parsed.m, 0);
+  const diffMs = slotTime.getTime() - now.getTime();
+  return diffMs < 2 * 60 * 60 * 1000;
+}
+
 function sanitizePhone(val) {
   return String(val || '').replace(/[^\d+\-\s()]/g, '').trim();
 }
@@ -248,6 +273,18 @@ const SupabaseDB = {
     return data?.[0];
   },
 
+  async updateOPGReport(id, updates) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const sanitized = {};
+    for (const [key, val] of Object.entries(updates)) {
+      if (typeof val === 'string') sanitized[key] = sanitizeName(val);
+      else sanitized[key] = val;
+    }
+    const { data, error } = await supabaseClient.from('opg_reports').update(sanitized).eq('id', id).select();
+    if (error) throw error;
+    return data?.[0];
+  },
+
   async deleteOPGReport(id) {
     if (!supabaseClient) throw new Error('Supabase not configured');
     const { error } = await supabaseClient.from('opg_reports').delete().eq('id', id);
@@ -258,6 +295,57 @@ const SupabaseDB = {
     if (!supabaseClient) throw new Error('Supabase not configured');
     const { error } = await supabaseClient.from('patients').delete().eq('id', id);
     if (error) throw error;
+  },
+
+  async addAuditLog(log) {
+    if (!supabaseClient) return;
+    try {
+      const { error } = await supabaseClient.from('audit_logs').insert([{
+        user_id: currentSession?.user?.id || null,
+        user_email: currentSession?.user?.email || 'unknown',
+        action: log.action,
+        entity_type: log.entityType,
+        entity_id: log.entityId || null,
+        entity_name: log.entityName || null,
+        details: log.details || {},
+        ip_address: log.ipAddress || null,
+        created: new Date().toISOString()
+      }]);
+      if (error) console.warn('Audit log error:', error);
+    } catch (e) {
+      console.warn('Audit log failed:', e);
+    }
+  },
+
+  async getAuditLogs(limit = 100) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('audit_logs').select('*').order('created', { ascending: false }).limit(limit);
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addPatientConsent(consent) {
+    if (!supabaseClient) return;
+    try {
+      const { error } = await supabaseClient.from('patient_consents').insert([{
+        patient_id: consent.patientId,
+        consent_type: consent.consentType,
+        consent_given: consent.consentGiven,
+        consent_text: consent.consentText,
+        ip_address: consent.ipAddress || null,
+        created: new Date().toISOString()
+      }]);
+      if (error) console.warn('Consent insert error:', error);
+    } catch (e) {
+      console.warn('Consent insert failed:', e);
+    }
+  },
+
+  async getPatientConsents(patientId) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('patient_consents').select('*').eq('patient_id', patientId).order('created', { ascending: false });
+    if (error) throw error;
+    return data || [];
   },
 
   isConfigured() {
@@ -300,7 +388,5 @@ window.checkRateLimit = checkRateLimit;
 window.CLINIC_WHATSAPP = CLINIC_WHATSAPP;
 window.initSession = initSession;
 window.getSession = getSession;
-
-window.supabaseClient = supabaseClient;
 
 initSession().catch(() => {});

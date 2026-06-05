@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="css/admin.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>if(typeof lucide!=='undefined') lucide.createIcons();</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.min.js"></script>
 </head>
 <body>
 
@@ -135,6 +135,10 @@
       </a>
       <a class="sb-item" onclick="showPage('holidays',this)">
         <span class="si-icon"><i data-lucide="calendar-x"></i></span> Clinic Holidays
+      </a>
+      <div class="sb-section">Settings</div>
+      <a class="sb-item" onclick="showPage('settings',this)">
+        <span class="si-icon"><i data-lucide="settings"></i></span> Data Settings
       </a>
     </nav>
     <div class="sb-footer">
@@ -319,6 +323,59 @@
           <div class="mg"><label>Date *</label><input class="inp" type="date" id="holidayDate"></div>
           <div class="mg"><label>Reason (optional)</label><input class="inp" id="holidayReason" placeholder="e.g. Republic Day, Pongal..."></div>
           <button class="btn btn-teal" onclick="addHoliday()" style="width:100%">✓ Add Holiday</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DATA SETTINGS ── -->
+    <div class="page" id="page-settings">
+      <div class="sec-hdr"><h2>Data <span>Settings</span></h2></div>
+      <div style="max-width:700px">
+        <div class="table-wrap" style="padding:32px;border-radius:var(--radius)">
+          <h3 style="font-size:16px;font-weight:600;margin-bottom:20px;color:var(--deep)">Data Retention Policy</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Configure how long patient records are retained. Old records beyond the retention period can be cleaned up.</p>
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+            <div class="mg">
+              <label>Patient Records Retention (years)</label>
+              <input class="inp" type="number" id="retentionPatients" min="1" max="10" value="3">
+            </div>
+            <div class="mg">
+              <label>Appointment Records Retention (years)</label>
+              <input class="inp" type="number" id="retentionAppointments" min="1" max="10" value="2">
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;margin-bottom:32px">
+            <button class="btn btn-teal" onclick="saveRetentionSettings()">Save Settings</button>
+            <button class="btn btn-outline" onclick="loadRetentionSettings()">Reset to Saved</button>
+          </div>
+
+          <h3 style="font-size:16px;font-weight:600;margin-bottom:20px;color:var(--deep)">Data Cleanup</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Permanently delete records older than the retention period. This action cannot be undone.</p>
+          
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px;margin-bottom:20px">
+            <p style="font-size:13px;color:#991b1b;margin:0"><strong>Warning:</strong> This will permanently delete old patient and appointment records. Make sure to export a backup first.</p>
+          </div>
+
+          <div style="display:flex;gap:12px">
+            <button class="btn btn-danger" onclick="runDataCleanup()">Clean Up Old Records</button>
+          </div>
+
+          <div id="cleanupResult" style="margin-top:16px;display:none"></div>
+        </div>
+
+        <div class="table-wrap" style="padding:32px;border-radius:var(--radius);margin-top:24px">
+          <h3 style="font-size:16px;font-weight:600;margin-bottom:20px;color:var(--deep)">Backup & Export</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Download a complete backup of all patient records, appointments, and orthodontic cases as a JSON file.</p>
+          
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button class="btn btn-teal" onclick="exportAllData()">Export All Data (JSON)</button>
+            <button class="btn btn-outline" onclick="exportPatientsCSV()">Export Patients (CSV)</button>
+            <button class="btn btn-outline" onclick="exportAppointmentsCSV()">Export Appointments (CSV)</button>
+          </div>
+
+          <div id="exportResult" style="margin-top:16px;display:none"></div>
         </div>
       </div>
     </div>
@@ -514,10 +571,6 @@
     <div class="toast-m" id="toastMsg"></div>
   </div>
 
-  <!-- WHATSAPP FLOATING BUTTON -->
-  <a href="https://wa.me/919176640037?text=Hi%20SP%20Dental%20Care!%20I%27d%20like%20to%20book%20an%20appointment." target="_blank" rel="noopener noreferrer" class="whatsapp-btn" title="Chat with us on WhatsApp" aria-label="WhatsApp" style="position:fixed;bottom:24px;right:24px;z-index:9999;width:48px;height:48px;background:linear-gradient(135deg,#25D366,#128C7E);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(37,211,102,0.4);transition:all 0.3s;text-decoration:none;">
-    <svg viewBox="0 0 32 32" fill="white" width="24" height="24"><path d="M16.004 0h-.008C7.172 0 0 7.172 0 16c0 3.348 1.03 6.457 2.793 9.039L1.082 31.18l6.387-1.668A15.93 15.93 0 0 0 16.004 32C24.828 32 32 24.828 32 16S24.828 0 16.004 0zm9.422 22.594c-.43 1.21-2.136 2.234-3.5 2.535-.93.207-2.152.363-6.273-1.348-5.266-2.188-8.664-7.543-8.926-7.887-.27-.352-2.129-2.836-2.129-5.41 0-2.574 1.352-3.844 1.83-4.367.477-.524 1.043-.66 1.39-.66.348 0 .696.004 1 .031.32.027.754-.122 1.18.903.43 1.035 1.46 3.582 1.59 3.84.13.258.215.562.043.907-.172.344-.258.559-.516.863-.259.304-.543.676-.777.91-.259.258-.528.539-.226 1.055.303.516 1.344 2.219 2.883 3.59 1.98 1.766 3.648 2.313 4.168 2.574.52.261.824.215 1.129-.129.304-.344 1.293-1.5 1.637-2.016.344-.516.688-.43 1.164-.258.477.172 3.008 1.418 3.523 1.676.516.258.86.387.988.601.129.215.129 1.234-.301 2.445z"/></svg>
-  </a>
 
   <script>
   // Show notice if Supabase is not configured

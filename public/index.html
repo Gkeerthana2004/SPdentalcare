@@ -35,10 +35,7 @@
 <!-- Preconnect & DNS Prefetch -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-<link rel="dns-prefetch" href="https://unpkg.com">
-<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-<link rel="dns-prefetch" href="https://*.supabase.co">
+    <link rel="dns-prefetch" href="https://*.supabase.co">
 
 <!-- PWA Manifest -->
 <link rel="manifest" href="manifest.json">
@@ -47,7 +44,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/landing.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.min.js"></script>
 
 <!-- Structured Data - LocalBusiness -->
 <script type="application/ld+json">
@@ -115,7 +112,6 @@
   <ul class="nav-links">
     <li><a href="#services">Services</a></li>
     <li><a href="#doctors">Doctors</a></li>
-    <li><a href="#why">About</a></li>
     <li><a href="#gallery">Gallery</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#booking" class="nav-cta">Book Appointment</a></li>
@@ -131,7 +127,6 @@
   <button class="mobile-close" id="mobileClose">✕</button>
   <a href="#services" onclick="closeMobileNav()">Services</a>
   <a href="#doctors" onclick="closeMobileNav()">Doctors</a>
-  <a href="#why" onclick="closeMobileNav()">About</a>
   <a href="#gallery" onclick="closeMobileNav()">Gallery</a>
   <a href="#contact" onclick="closeMobileNav()">Contact</a>
   <a href="#booking" onclick="closeMobileNav()" style="color:var(--teal)">Book Appointment</a>
@@ -346,7 +341,7 @@
           <div class="form-row">
             <div class="form-group">
               <label>Full Name *</label>
-              <input type="text" class="form-control" id="fullName" placeholder="Your full name">
+              <input type="text" class="form-control" id="fullName" placeholder="Your full name" autocomplete="name">
             </div>
             <div class="form-group">
               <label>Age</label>
@@ -356,16 +351,22 @@
           <div class="form-row">
             <div class="form-group">
               <label>Phone Number *</label>
-              <input type="tel" class="form-control" id="phone" placeholder="+91 XXXXX XXXXX">
+              <input type="tel" class="form-control" id="phone" placeholder="+91 XXXXX XXXXX" autocomplete="tel">
             </div>
             <div class="form-group">
               <label>Email Address</label>
-              <input type="email" class="form-control" id="email" placeholder="your@email.com">
+              <input type="email" class="form-control" id="email" placeholder="your@email.com" autocomplete="email">
             </div>
           </div>
           <div class="form-group">
             <label>Insurance Provider (Optional)</label>
             <input type="text" class="form-control" id="insurance" placeholder="Star Health, Bajaj Allianz, etc.">
+          </div>
+          <div class="form-group" style="margin-top:8px">
+            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;line-height:1.4;color:var(--text-muted)">
+              <input type="checkbox" id="consentCheck" style="margin-top:2px;flex-shrink:0">
+              <span>I consent to SP Dental Care collecting and storing my personal and health information for appointment scheduling and treatment purposes. I understand my data will be handled as per the <a href="privacy.html" target="_blank" style="color:var(--teal);text-decoration:underline">Privacy Policy</a>.</span>
+            </label>
           </div>
           <div class="form-nav">
             <button class="btn-back" onclick="prevStep(4)">← Back</button>
@@ -505,13 +506,13 @@
 
 <!-- DOCTORS -->
 <section id="doctors">
-  <div class="section-heading reveal">
+  <div class="section-heading">
     <div class="section-tag">Meet The Team</div>
     <h2 class="section-title">Our Expert <strong>Dentists</strong></h2>
     <p class="section-desc" style="margin: 16px auto 0;">Highly trained specialists dedicated to providing exceptional care with warmth and expertise.</p>
   </div>
-  <div class="doctors-grid">
-    <div class="doctor-card reveal" style="transition-delay:0.05s">
+  <div class="doctors-track">
+    <div class="doctor-card" onclick="location.href='#booking'">
       <div class="doctor-avatar">
         <div class="doctor-emoji">👨‍⚕️</div>
         <div class="doctor-overlay">
@@ -522,7 +523,7 @@
       <div class="doctor-spec">General Surgeon</div>
       <div class="doctor-exp">BDS, MDS · 10 years experience</div>
     </div>
-    <div class="doctor-card reveal" style="transition-delay:0.1s">
+    <div class="doctor-card" onclick="location.href='#booking'">
       <div class="doctor-avatar">
         <div class="doctor-emoji">👩‍⚕️</div>
         <div class="doctor-overlay">
@@ -533,7 +534,7 @@
       <div class="doctor-spec">Orthodontist & Dento Facial Orthopediecs</div>
       <div class="doctor-exp">BDS, MDS · 10 years experience</div>
     </div>
-    <div class="doctor-card reveal" style="transition-delay:0.15s">
+    <div class="doctor-card" onclick="location.href='#booking'">
       <div class="doctor-avatar">
         <div class="doctor-emoji">👨‍⚕️</div>
         <div class="doctor-overlay">
@@ -544,7 +545,7 @@
       <div class="doctor-spec">Root Canal Specialist & Pedodontist</div>
       <div class="doctor-exp">MDS · 3 years experience</div>
     </div>
-    <div class="doctor-card reveal" style="transition-delay:0.2s">
+    <div class="doctor-card" onclick="location.href='#booking'">
       <div class="doctor-avatar">
         <div class="doctor-emoji">👩‍⚕️</div>
         <div class="doctor-overlay">
@@ -555,7 +556,7 @@
       <div class="doctor-spec">Oral & Maxillofacial Surgeon Implantologist</div>
       <div class="doctor-exp">BDS, MDS · 8 years experience</div>
     </div>
-    <div class="doctor-card reveal" style="transition-delay:0.25s">
+    <div class="doctor-card" onclick="location.href='#booking'">
       <div class="doctor-avatar">
         <div class="doctor-emoji">👩‍⚕️</div>
         <div class="doctor-overlay">
@@ -566,7 +567,7 @@
       <div class="doctor-spec">Periodontist</div>
       <div class="doctor-exp">BDS, MDS · 10 years experience</div>
     </div>
-    <div class="doctor-card reveal" style="transition-delay:0.3s">
+    <div class="doctor-card" onclick="location.href='#booking'">
       <div class="doctor-avatar">
         <div class="doctor-emoji">👨‍⚕️</div>
         <div class="doctor-overlay">
@@ -577,46 +578,72 @@
       <div class="doctor-spec">Oral & Maxillofacial Surgeon & Implantologist</div>
       <div class="doctor-exp">BDS, MDS · 3 years experience</div>
     </div>
-  </div>
-</section>
-
-<!-- WHY CHOOSE US -->
-<section id="why">
-  <div class="section-heading reveal">
-    <div class="section-tag">Why SP Dental Care</div>
-    <h2 class="section-title">Why <strong>Choose Us</strong></h2>
-    <p class="section-desc" style="margin: 16px auto 0;">We combine advanced technology with genuine compassion to deliver dental care that exceeds expectations.</p>
-  </div>
-  <div class="services-grid" style="max-width:1000px;margin:0 auto">
-    <div class="service-card reveal" style="transition-delay:0.05s">
-      <div class="service-icon">🏆</div>
-      <h3>11+ Years Experience</h3>
-      <p>Over a decade of trusted dental care serving thousands of happy patients across Chennai.</p>
+    <!-- Duplicate set for seamless loop -->
+    <div class="doctor-card" onclick="location.href='#booking'">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👨‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Saranya</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. Saranya Mohan</div>
+      <div class="doctor-spec">General Surgeon</div>
+      <div class="doctor-exp">BDS, MDS · 10 years experience</div>
     </div>
-    <div class="service-card reveal" style="transition-delay:0.1s">
-      <div class="service-icon">🔬</div>
-      <h3>Advanced Technology</h3>
-      <p>State-of-the-art equipment including digital X-rays, rotary endodontics, and 3D imaging for precision treatment.</p>
+    <div class="doctor-card" onclick="location.href='#booking'">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👩‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Poornima</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. Poornima Gopiraj</div>
+      <div class="doctor-spec">Orthodontist & Dento Facial Orthopediecs</div>
+      <div class="doctor-exp">BDS, MDS · 10 years experience</div>
     </div>
-    <div class="service-card reveal" style="transition-delay:0.15s">
-      <div class="service-icon">👩‍⚕️</div>
-      <h3>Expert Specialist Team</h3>
-      <p>6 highly qualified specialists covering every branch of dentistry under one roof.</p>
+    <div class="doctor-card" onclick="location.href='#booking'">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👨‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Syed</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. Syed Sulaiman</div>
+      <div class="doctor-spec">Root Canal Specialist & Pedodontist</div>
+      <div class="doctor-exp">MDS · 3 years experience</div>
     </div>
-    <div class="service-card reveal" style="transition-delay:0.2s">
-      <div class="service-icon">💰</div>
-      <h3>Affordable Premium Care</h3>
-      <p>World-class treatments at transparent, competitive prices with EMI options available.</p>
+    <div class="doctor-card" onclick="location.href='#booking'">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👩‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Lakshmi</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. Lakshmi Rathan</div>
+      <div class="doctor-spec">Oral & Maxillofacial Surgeon Implantologist</div>
+      <div class="doctor-exp">BDS, MDS · 8 years experience</div>
     </div>
-    <div class="service-card reveal" style="transition-delay:0.25s">
-      <div class="service-icon">⏰</div>
-      <h3>Flexible Evening Hours</h3>
-      <p>Open 5 PM to 9 PM daily including weekends, perfect for working professionals.</p>
+    <div class="doctor-card" onclick="location.href='#booking'">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👩‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Radhika</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. B. Radhika</div>
+      <div class="doctor-spec">Periodontist</div>
+      <div class="doctor-exp">BDS, MDS · 10 years experience</div>
     </div>
-    <div class="service-card reveal" style="transition-delay:0.3s">
-      <div class="service-icon">🛡️</div>
-      <h3>Patient Safety First</h3>
-      <p>Rigid sterilization protocols and international hygiene standards for your complete safety.</p>
+    <div class="doctor-card" onclick="location.href='#booking'">
+      <div class="doctor-avatar">
+        <div class="doctor-emoji">👨‍⚕️</div>
+        <div class="doctor-overlay">
+          <a href="#booking" class="btn-primary">Book with Dr. Ashik</a>
+        </div>
+      </div>
+      <div class="doctor-name">Dr. Ashik Ahamed</div>
+      <div class="doctor-spec">Oral & Maxillofacial Surgeon & Implantologist</div>
+      <div class="doctor-exp">BDS, MDS · 3 years experience</div>
     </div>
   </div>
 </section>
@@ -660,7 +687,7 @@
       <p class="section-desc reveal">We're always here to answer your questions and help you on your journey to a healthier smile.</p>
   </div>
   <div class="contact-layout">
-    <div>
+    <div class="contact-left">
       <div class="contact-items">
         <div class="contact-item reveal">
           <div class="ci-icon">📍</div>
@@ -684,9 +711,6 @@
           </div>
         </div>
       </div>
-      <div class="map-container reveal">
-        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.46!2d80.0425!3d12.8238!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a52f5e5e5e5!2sBharathiyar+St%2C+Potheri%2C+Kattankulathur%2C+Tamil+Nadu+603203!5e0!3m2!1sen!2sin!4v1700000000" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="SP Dental Care Location on Google Maps"></iframe>
-      </div>
       <div class="review-card reveal">
         <div class="review-header">
           <div class="review-stars">★★★★★</div>
@@ -705,37 +729,14 @@
         </div>
       </div>
     </div>
-      <div class="contact-form-box reveal">
-      <h3>Send Us a Message</h3>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Your Name</label>
-          <input type="text" class="form-control" id="cf_name" placeholder="Full name">
-        </div>
-        <div class="form-group">
-          <label>Phone</label>
-          <input type="tel" class="form-control" id="cf_phone" placeholder="+91 XXXXX XXXXX">
+    <div class="contact-right reveal">
+      <div class="map-container" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=SP+Dental+Care+Kattankulathur','_blank')" style="cursor:pointer;" title="Get Directions to SP Dental Care">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d988.3499144291019!2d80.03640265471532!3d12.819024700567955!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a52f76c74283ae3%3A0x3181bf33f679e6a2!2s6%2C%20Bharathiyar%20St%2C%20near%20potheri%2C%20Potheri%2C%20signal%2C%20Kattankulathur%2C%20Tamil%20Nadu%20603203!5e0!3m2!1sen!2sin!4v1780638725440!5m2!1sen!2sin" width="600" height="450" style="border:0; pointer-events:none;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="SP Dental Care Location on Google Maps"></iframe>
+        <div class="map-overlay">
+          <span class="map-overlay-icon">🧭</span>
+          <span class="map-overlay-text">Click to Get Directions</span>
         </div>
       </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" class="form-control" id="cf_email" placeholder="your@email.com">
-      </div>
-      <div class="form-group">
-        <label>Subject</label>
-        <select class="form-control" id="cf_subject">
-          <option>General Enquiry</option>
-          <option>Appointment Query</option>
-          <option>Treatment Info</option>
-          <option>Billing & Insurance</option>
-          <option>Feedback</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Message</label>
-        <textarea class="form-control" rows="4" id="cf_message" placeholder="How can we help you?" style="resize:none;"></textarea>
-      </div>
-      <button class="btn-gold" onclick="submitContactForm()">Send Message →</button>
     </div>
   </div>
 </section>
@@ -786,7 +787,7 @@
         <li><a href="#">Insurance Plans</a></li>
         <li><a href="#">EMI Options</a></li>
         <li><a href="#">Patient Rights</a></li>
-        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="privacy.html">Privacy Policy</a></li>
       </ul>
     </div>
   </div>

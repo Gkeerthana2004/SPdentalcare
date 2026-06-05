@@ -249,6 +249,25 @@ async function handleChatChoice(key, value) {
 async function submitChatBooking() {
   try {
     checkRateLimit();
+
+    const bookedTimes = new Set();
+    if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
+      try {
+        const remote = await SupabaseDB.getAppointments();
+        remote.filter(a => a.date === chatState.data.date).forEach(a => bookedTimes.add(a.time));
+      } catch (e) {
+        const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
+        local.filter(a => a.date === chatState.data.date).forEach(a => bookedTimes.add(a.time));
+      }
+    } else {
+      const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
+      local.filter(a => a.date === chatState.data.date).forEach(a => bookedTimes.add(a.time));
+    }
+    if (bookedTimes.has(chatState.data.time)) {
+      addChatMsg('bot', '\u274C Sorry, that slot was just booked by someone else. Please go back and choose another time.');
+      return;
+    }
+
     const d = chatState.data;
     const id = 'APT-' + crypto.randomUUID().slice(0, 8);
     const apt = {
@@ -285,7 +304,7 @@ async function submitChatBooking() {
           });
         }
       } catch (e) {
-        console.error('Chat booking save failed:', e);
+        devError('Chat booking save failed:', e);
         throw new Error('Could not save booking. Please try again.');
       }
     } else {
@@ -325,7 +344,7 @@ async function submitChatBooking() {
     chatState.step = 0;
   } catch (e) {
     addChatMsg('bot', '\u274C Sorry, something went wrong. ' + htmlEscape(e.message || 'Please try again.'));
-    console.error('Chat booking error:', e);
+    devError('Chat booking error:', e);
   }
 }
 

@@ -1,6 +1,11 @@
 const SUPABASE_URL = window.SUPABASE_CONFIG?.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_CONFIG?.SUPABASE_ANON_KEY;
 const CLINIC_WHATSAPP = '919176640037';
+const DEBUG = false;
+
+function devLog(...args) { if (DEBUG) console.log('[SP]', ...args); }
+function devWarn(...args) { if (DEBUG) console.warn('[SP]', ...args); }
+function devError(...args) { if (DEBUG) console.error('[SP]', ...args); }
 
 let supabaseClient = null;
 let isSupabaseConfigured = false;
@@ -82,10 +87,10 @@ if (hasValidSupabaseUrl && hasValidAnonKey) {
     isSupabaseConfigured = true;
     // Supabase client initialized
   } catch (e) {
-    console.warn('Supabase init failed:', e.message);
+    devWarn('Supabase init failed:', e.message);
   }
 } else {
-  console.warn('Supabase not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env');
+  devWarn('Supabase not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env');
 }
 
 async function initSession() {
@@ -123,7 +128,7 @@ async function doLogout() {
   try {
     await supabaseClient.auth.signOut();
   } catch (e) {
-    console.warn('Logout error:', e.message);
+    devWarn('Logout error:', e.message);
   }
   currentSession = null;
 }
@@ -140,9 +145,9 @@ function getAuthHeader() {
 }
 
 const SupabaseDB = {
-  async getPatients() {
+  async getPatients(limit = 200) {
     if (!supabaseClient) throw new Error('Supabase not configured');
-    const { data, error } = await supabaseClient.from('patients').select('*').order('created', { ascending: false });
+    const { data, error } = await supabaseClient.from('patients').select('*').order('created', { ascending: false }).limit(limit);
     if (error) throw error;
     return data || [];
   },
@@ -176,9 +181,9 @@ const SupabaseDB = {
     return data?.[0];
   },
 
-  async getAppointments() {
+  async getAppointments(limit = 500) {
     if (!supabaseClient) throw new Error('Supabase not configured');
-    const { data, error } = await supabaseClient.from('appointments').select('*').order('created', { ascending: false });
+    const { data, error } = await supabaseClient.from('appointments').select('*').order('created', { ascending: false }).limit(limit);
     if (error) throw error;
     return data || [];
   },
@@ -218,9 +223,9 @@ const SupabaseDB = {
     if (error) throw error;
   },
 
-  async getOrthodontics() {
+  async getOrthodontics(limit = 200) {
     if (!supabaseClient) throw new Error('Supabase not configured');
-    const { data, error } = await supabaseClient.from('orthodontics').select('*').order('start', { ascending: false });
+    const { data, error } = await supabaseClient.from('orthodontics').select('*').order('start', { ascending: false }).limit(limit);
     if (error) throw error;
     return data || [];
   },
@@ -245,11 +250,18 @@ const SupabaseDB = {
     if (error) throw error;
   },
 
-  async getOPGReports() {
+  async getOPGReports(limit = 50) {
     if (!supabaseClient) throw new Error('Supabase not configured');
-    const { data, error } = await supabaseClient.from('opg_reports').select('*').order('date', { ascending: false });
+    const { data, error } = await supabaseClient.from('opg_reports').select('id, pid, ortho_id, title, date, notes, created').order('date', { ascending: false }).limit(limit);
     if (error) throw error;
     return data || [];
+  },
+
+  async getOPGReportImage(id) {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('opg_reports').select('image').eq('id', id).single();
+    if (error) throw error;
+    return data?.image || '';
   },
 
   async getOPGReportsByPatient(pid) {
@@ -311,9 +323,9 @@ const SupabaseDB = {
         ip_address: log.ipAddress || null,
         created: new Date().toISOString()
       }]);
-      if (error) console.warn('Audit log error:', error);
+      if (error) devWarn('Audit log error:', error);
     } catch (e) {
-      console.warn('Audit log failed:', e);
+      devWarn('Audit log failed:', e);
     }
   },
 
@@ -335,9 +347,9 @@ const SupabaseDB = {
         ip_address: consent.ipAddress || null,
         created: new Date().toISOString()
       }]);
-      if (error) console.warn('Consent insert error:', error);
+      if (error) devWarn('Consent insert error:', error);
     } catch (e) {
-      console.warn('Consent insert failed:', e);
+      devWarn('Consent insert failed:', e);
     }
   },
 
@@ -369,14 +381,64 @@ const SupabaseDB = {
   }
 };
 
-function getHolidays() {
+function getLocalHolidays() {
   try { return JSON.parse(localStorage.getItem('pd_holidays') || '[]'); } catch { return []; }
 }
+
+async function getHolidays() {
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient.from('clinic_holidays').select('*').order('date', { ascending: true });
+      if (!error && data) {
+        const holidays = data.map(h => ({ date: h.date, reason: h.reason }));
+        localStorage.setItem('pd_holidays', JSON.stringify(holidays));
+        return holidays;
+      }
+    } catch (e) {
+      devWarn('Holiday fetch failed, using local:', e.message || e);
+    }
+  }
+  return getLocalHolidays();
+}
+
+async function addHoliday(date, reason) {
+  const holidays = getLocalHolidays();
+  if (holidays.some(h => h.date === date)) return false;
+  holidays.push({ date, reason: reason || 'Closure' });
+  localStorage.setItem('pd_holidays', JSON.stringify(holidays));
+  if (supabaseClient) {
+    try {
+      await supabaseClient.from('clinic_holidays').upsert([{ date, reason: reason || 'Closure' }], { onConflict: 'date' });
+    } catch (e) {
+      devWarn('Holiday sync failed:', e.message || e);
+    }
+  }
+  return true;
+}
+
+async function removeHoliday(date) {
+  let holidays = getLocalHolidays();
+  holidays = holidays.filter(h => h.date !== date);
+  localStorage.setItem('pd_holidays', JSON.stringify(holidays));
+  if (supabaseClient) {
+    try {
+      await supabaseClient.from('clinic_holidays').delete().eq('date', date);
+    } catch (e) {
+      devWarn('Holiday sync failed:', e.message || e);
+    }
+  }
+}
+
 function isHoliday(dateStr) {
-  return getHolidays().some(h => h.date === dateStr);
+  return getLocalHolidays().some(h => h.date === dateStr);
 }
 window.getHolidays = getHolidays;
 window.isHoliday = isHoliday;
+window.addHoliday = addHoliday;
+window.removeHoliday = removeHoliday;
+window.devLog = devLog;
+window.devWarn = devWarn;
+window.devError = devError;
 
 window.SupabaseDB = SupabaseDB;
 window.htmlEscape = htmlEscape;
@@ -389,4 +451,4 @@ window.CLINIC_WHATSAPP = CLINIC_WHATSAPP;
 window.initSession = initSession;
 window.getSession = getSession;
 
-initSession().catch(() => {});
+initSession().catch(e => devWarn('Session init failed:', e.message || e));

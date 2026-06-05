@@ -6,7 +6,7 @@ function setLocal(k, v) {
     localStorage.setItem('pd_' + k, JSON.stringify(v));
   } catch (e) {
     if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
-      console.warn('localStorage quota exceeded for key:', k);
+      devWarn('localStorage quota exceeded for key:', k);
       if (Array.isArray(v) && v.length > 10) {
         v = v.slice(0, 10);
         try {
@@ -55,7 +55,7 @@ async function logAudit(action, entityType, entityId, entityName, details = {}) 
     try {
       await SupabaseDB.addAuditLog({ action, entityType, entityId, entityName, details });
     } catch (e) {
-      console.warn('Audit log failed:', e);
+      devWarn('Audit log failed:', e);
     }
   }
 }
@@ -73,7 +73,7 @@ const DB = {
         }
         return data;
       } catch (e) {
-        console.warn('DB.get Supabase error:', e);
+        devWarn('DB.get Supabase error:', e);
         throw e;
       }
     }
@@ -100,7 +100,9 @@ const DB = {
               case 'ortho': return await SupabaseDB.updateOrthodonticCase(item.id, item);
               case 'opg_reports': return await SupabaseDB.updateOPGReport(item.id, item);
             }
-          } catch (_) {}
+          } catch (updateErr) {
+            devWarn('Upsert fallback failed:', updateErr);
+          }
         }
         throw e;
       }
@@ -169,7 +171,7 @@ const DB = {
             case 'opg_reports': await SupabaseDB.addOPGReport(item); break;
           }
         } catch (e) {
-          console.warn('DB.set Supabase sync error:', e);
+          devWarn('DB.set Supabase sync error:', e);
         }
       }
       return v;
@@ -186,7 +188,7 @@ async function seedData() {
       const existing = await SupabaseDB.getPatients();
       if (existing && existing.length > 0) return;
     } catch (e) {
-      console.warn('Could not check existing data:', e);
+      devWarn('Could not check existing data:', e);
     }
   } else {
     const existingPatients = getLocal('patients');
@@ -273,7 +275,7 @@ async function handleLogin() {
       email: result.user.email,
       name: result.user.user_metadata?.display_name || result.user.email?.split('@')[0] || 'Doctor',
       role: result.user.user_metadata?.role || 'Doctor',
-      avatar: result.user.user_metadata?.avatar || '👨‍⚕️'
+      avatar: result.user.user_metadata?.avatar || 'ðŸ‘¨â€âš•ï¸'
     };
     document.getElementById('loginErr').style.display = 'none';
     document.getElementById('sbDocName').textContent = currentUser.name;
@@ -284,7 +286,7 @@ async function handleLogin() {
     if (typeof lucide !== 'undefined') lucide.createIcons();
     initSessionTimeout();
     await refreshAll();
-    toast('👋', 'Welcome back!', currentUser.name + ' — ' + currentUser.role, 'success');
+    toast('ðŸ‘‹', 'Welcome back!', currentUser.name + ' â€” ' + currentUser.role, 'success');
   } catch (e) {
     if (e.message && e.message.includes('Invalid login credentials')) {
       showLoginError('Invalid email or password. Please try again.');
@@ -316,7 +318,9 @@ document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key
 async function doLogout() {
   currentUser = null;
   if (SupabaseDB.isConfigured()) {
-    try { await SupabaseDB.logout(); } catch (e) {}
+    try { await SupabaseDB.logout(); } catch (e) {
+      devWarn('Logout error:', e.message || e);
+    }
   }
   clearSessionTimeout();
   document.getElementById('dashboard').style.display = 'none';
@@ -365,7 +369,7 @@ async function showPage(id, el) {
   document.getElementById('page-'+id).classList.add('active');
   if (el) el.classList.add('active');
   const titles = { overview:'Overview Dashboard', appointments:'Appointment Management', patients:'Patient Records', ortho:'Ortho Treatment Tracker', 'add-patient':'Add New Patient', holidays:'Clinic Holidays', settings:'Data Settings' };
-  const icons = { overview:'📊', appointments:'📅', patients:'👥', ortho:'😁', 'add-patient':'➕', holidays:'🎉', settings:'⚙️' };
+  const icons = { overview:'ðŸ“Š', appointments:'ðŸ“…', patients:'ðŸ‘¥', ortho:'ðŸ˜', 'add-patient':'âž•', holidays:'ðŸŽ‰', settings:'âš™ï¸' };
   const t = titles[id] || id;
   document.getElementById('pageTitle').innerHTML = icons[id] ? htmlEscape(icons[id]) + ' <span style="font-style:italic;color:var(--teal)">' + htmlEscape(t.split(' ').slice(-1)[0]) + '</span> ' + htmlEscape(t.split(' ').slice(0,-1).join(' ')) : htmlEscape(t);
   if (id==='appointments') await renderAppointments();
@@ -450,7 +454,7 @@ async function saveAppointment() {
     await renderAppointments(); await renderOverview();
     toast('\u2705','Appointment Saved!',htmlEscape(name) + ' \u2014 ' + htmlEscape(time) + ' on ' + htmlEscape(formatDate(date)),'success');
   } catch (e) {
-    console.error('Error saving appointment:', e);
+    devError('Error saving appointment:', e);
     toast('\u274C','Save Failed',sanitizeErrorMessage(e) || 'Could not save appointment','error');
   }
 }
@@ -481,7 +485,7 @@ async function markComplete(id) {
     await renderAppointments(); await renderOverview();
     toast('\u2705','Marked Complete','Appointment updated','success');
   } catch (e) {
-    console.error('Error marking complete:', e);
+    devError('Error marking complete:', e);
     toast('\u274C','Update Failed',sanitizeErrorMessage(e) || 'Could not update appointment','error');
   }
 }
@@ -493,7 +497,7 @@ async function deleteAppt(id) {
     await renderAppointments(); await renderOverview();
     toast('\uD83D\uDDD1\uFE0F','Deleted','Appointment removed');
   } catch (e) {
-    console.error('Error deleting appointment:', e);
+    devError('Error deleting appointment:', e);
     toast('\u274C','Delete Failed','Could not delete appointment','error');
   }
 }
@@ -526,7 +530,7 @@ async function addPatient() {
     await renderOverview();
     if (treatment === 'Orthodontics') setTimeout(() => toast('\uD83D\uDCA1','Tip','This patient has Orthodontics \u2014 add an Ortho Case from the tracker!'), 2500);
   } catch (e) {
-    console.error('Error adding patient:', e);
+    devError('Error adding patient:', e);
     toast('\u274C','Add Failed',sanitizeErrorMessage(e) || 'Could not add patient','error');
   }
 }
@@ -586,7 +590,7 @@ async function savePatientEdit(pid) {
     await renderPatients(); await renderOverview();
     toast('\u2705','Patient Updated!',updates.name,'success');
   } catch (e) {
-    console.error('Error updating patient:', e);
+    devError('Error updating patient:', e);
     toast('\u274C','Update Failed',sanitizeErrorMessage(e) || 'Could not update patient','error');
   }
 }
@@ -635,7 +639,7 @@ async function deletePatient(pid) {
     await renderPatients(); await renderOverview();
     toast('\uD83D\uDDD1\uFE0F','Deleted','Patient record removed');
   } catch (e) {
-    console.error('Error deleting patient:', e);
+    devError('Error deleting patient:', e);
     toast('\u274C','Delete Failed','Could not delete patient','error');
   }
 }
@@ -674,7 +678,7 @@ async function saveOrthoCase() {
     await renderOrtho(); await renderOverview();
     toast('\u2705','Ortho Case Created!',htmlEscape(name) + ' \u2014 ' + htmlEscape(o.type),'success');
   } catch (e) {
-    console.error('Error saving ortho case:', e);
+    devError('Error saving ortho case:', e);
     toast('\u274C','Save Failed',sanitizeErrorMessage(e) || 'Could not save ortho case','error');
   }
 }
@@ -710,7 +714,7 @@ async function saveOrthoVisit() {
     await renderOrtho(); await renderOverview();
     toast('\u2705','Visit Recorded!','Progress: ' + prog + '%','success');
   } catch (e) {
-    console.error('Error saving ortho visit:', e);
+    devError('Error saving ortho visit:', e);
     toast('\u274C','Save Failed',sanitizeErrorMessage(e) || 'Could not save visit','error');
   }
 }
@@ -747,7 +751,7 @@ async function deleteOrtho(id) {
     await renderOrtho(); await renderOverview();
     toast('\uD83D\uDDD1\uFE0F','Deleted','Ortho case removed');
   } catch (e) {
-    console.error('Error deleting ortho case:', e);
+    devError('Error deleting ortho case:', e);
     toast('\u274C','Delete Failed','Could not delete ortho case','error');
   }
 }
@@ -761,9 +765,17 @@ function openOPGModal(orthoId) {
 }
 
 async function viewOPG(id) {
-  const allOPGs = await DB.get('opg_reports') || [];
-  const r = allOPGs.find(x => x.id === id);
-  if (!r || !r.image) return;
+  let r;
+  try {
+    const allOPGs = await DB.get('opg_reports') || [];
+    r = allOPGs.find(x => x.id === id);
+    if (!r) return;
+    r.image = await SupabaseDB.getOPGReportImage(id);
+  } catch (e) {
+    toast('\u274C','Error', 'Could not load OPG report');
+    return;
+  }
+  if (!r.image) return;
 
   let dataUrl = r.image;
   if (!r.image.startsWith('data:')) {
@@ -776,8 +788,8 @@ async function viewOPG(id) {
   modal.innerHTML = '<div class="modal" style="max-width:950px;max-height:95vh;display:flex;flex-direction:column">' +
     '<div class="modal-hdr"><h3>\uD83D\uDCC4 ' + htmlEscape(r.title) + '</h3>' +
     '<div style="display:flex;gap:8px;align-items:center">' +
-    '<a href="' + dataUrl + '" download="' + htmlEscape(r.title) + '.pdf" class="btn btn-sm btn-teal" style="text-decoration:none">⬇ Download</a>' +
-    '<div class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">✕</div></div></div>' +
+    '<a href="' + dataUrl + '" download="' + htmlEscape(r.title) + '.pdf" class="btn btn-sm btn-teal" style="text-decoration:none">â¬‡ Download</a>' +
+    '<div class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">âœ•</div></div></div>' +
     '<div class="modal-body" style="flex:1;overflow:auto;padding:0 24px 24px;background:#525659">' +
     '<div id="pdfViewerContainer" style="text-align:center;padding:20px 0"></div>' +
     '</div></div>';
@@ -800,7 +812,7 @@ async function viewOPG(id) {
     };
     script.onerror = () => {
       container.innerHTML = '<div style="color:#ccc;padding:40px"><p>PDF viewer failed to load.</p>' +
-        '<a href="' + dataUrl + '" download="' + htmlEscape(r.title) + '.pdf" style="color:#4dabf7;margin-top:10px;display:inline-block">⬇ Download PDF instead</a></div>';
+        '<a href="' + dataUrl + '" download="' + htmlEscape(r.title) + '.pdf" style="color:#4dabf7;margin-top:10px;display:inline-block">â¬‡ Download PDF instead</a></div>';
     };
     document.head.appendChild(script);
   }
@@ -814,9 +826,9 @@ async function renderPDF(dataUrl, container) {
 
     const toolbar = document.createElement('div');
     toolbar.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:12px;padding:12px;background:rgba(0,0,0,0.3);border-radius:8px;margin-bottom:12px;color:white;font-size:13px';
-    toolbar.innerHTML = '<button class="btn btn-sm btn-outline" id="pdfPrev" style="color:white;border-color:rgba(255,255,255,0.3)">← Prev</button>' +
+    toolbar.innerHTML = '<button class="btn btn-sm btn-outline" id="pdfPrev" style="color:white;border-color:rgba(255,255,255,0.3)">â† Prev</button>' +
       '<span id="pdfPageInfo"></span>' +
-      '<button class="btn btn-sm btn-outline" id="pdfNext" style="color:white;border-color:rgba(255,255,255,0.3)">Next →</button>';
+      '<button class="btn btn-sm btn-outline" id="pdfNext" style="color:white;border-color:rgba(255,255,255,0.3)">Next â†’</button>';
     container.appendChild(toolbar);
 
     let currentPage = 1;
@@ -850,9 +862,9 @@ async function renderPDF(dataUrl, container) {
       if (currentPage < totalPages) { currentPage++; document.getElementById('pdfPageInfo').textContent = 'Page ' + currentPage + ' of ' + totalPages; await renderPage(currentPage); }
     };
   } catch (e) {
-    console.error('PDF render error:', e);
+    devError('PDF render error:', e);
     container.innerHTML = '<div style="color:#ccc;padding:40px"><p>Could not render PDF: ' + htmlEscape(e.message) + '</p>' +
-      '<a href="' + dataUrl + '" download style="color:#4dabf7;margin-top:10px;display:inline-block">⬇ Download PDF instead</a></div>';
+      '<a href="' + dataUrl + '" download style="color:#4dabf7;margin-top:10px;display:inline-block">â¬‡ Download PDF instead</a></div>';
   }
 }
 
@@ -869,7 +881,7 @@ async function renderOPGs(orthoId) {
   opgs.forEach(r => {
     const div = document.createElement('div');
     div.style.cssText = 'background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px';
-    div.innerHTML = '<div style="padding:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div style="display:flex;align-items:flex-start;gap:14px;flex:1;min-width:0"><div style="width:44px;height:44px;border-radius:10px;background:rgba(45,110,110,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">\uD83D\uDCC4</div><div style="min-width:0"><div style="font-size:15px;font-weight:600;color:var(--deep)">' + htmlEscape(r.title) + '</div><div style="font-size:12px;color:var(--muted);margin-top:3px">\uD83D\uDCC5 ' + htmlEscape(formatDate(r.date)) + (r.image ? ' \u00B7 ' + ((r.image.length * 3/4 / 1024).toFixed(0)) + ' KB' : '') + '</div>' + (r.notes ? '<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5">' + htmlEscape(r.notes) + '</div>' : '') + '</div></div><div style="display:flex;gap:6px;flex-shrink:0">' + (r.image ? '<button class="btn btn-sm btn-teal" data-action="viewOPG" data-id="' + htmlEscape(r.id) + '">\uD83D\uDC41 View PDF</button>' : '') + '<button class="btn btn-sm btn-danger" data-action="deleteOPG" data-id="' + htmlEscape(r.id) + '">\u2715</button></div></div>';
+    div.innerHTML = '<div style="padding:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div style="display:flex;align-items:flex-start;gap:14px;flex:1;min-width:0"><div style="width:44px;height:44px;border-radius:10px;background:rgba(45,110,110,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">\uD83D\uDCC4</div><div style="min-width:0"><div style="font-size:15px;font-weight:600;color:var(--deep)">' + htmlEscape(r.title) + '</div><div style="font-size:12px;color:var(--muted);margin-top:3px">\uD83D\uDCC5 ' + htmlEscape(formatDate(r.date)) + '</div>' + (r.notes ? '<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5">' + htmlEscape(r.notes) + '</div>' : '') + '</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-sm btn-teal" data-action="viewOPG" data-id="' + htmlEscape(r.id) + '">\uD83D\uDC41 View PDF</button><button class="btn btn-sm btn-danger" data-action="deleteOPG" data-id="' + htmlEscape(r.id) + '">\u2715</button></div></div>';
     container.appendChild(div);
   });
 }
@@ -926,7 +938,7 @@ async function saveOPG() {
     renderOPGs(activeOPGOrthoId);
     toast('\u2705','OPG Saved!',htmlEscape(title) + ' \u2014 ' + htmlEscape(formatDate(date)),'success');
   } catch (e) {
-    console.error('Error saving OPG report:', e);
+    devError('Error saving OPG report:', e);
     toast('\u274C','Save Failed',sanitizeErrorMessage(e) || 'Could not save OPG report','error');
   }
 }
@@ -939,7 +951,7 @@ async function deleteOPG(id) {
     renderOPGs(activeOPGOrthoId);
     toast('\uD83D\uDDD1\uFE0F','Deleted','OPG report removed');
   } catch (e) {
-    console.error('Error deleting OPG report:', e);
+    devError('Error deleting OPG report:', e);
     toast('\u274C','Delete Failed','Could not delete OPG report','error');
   }
 }
@@ -962,7 +974,7 @@ document.addEventListener('click', function(e) {
   else if (action === 'openOPG') openOPGModal(id);
   else if (action === 'viewOPG') viewOPG(id);
   else if (action === 'deleteOPG') deleteOPG(id);
-  else if (action === 'deleteHoliday') deleteHoliday(id);
+  else if (action === 'deleteHoliday') handleDeleteHoliday(id);
 });
 
 function sanitizeErrorMessage(error) {
@@ -992,7 +1004,7 @@ function formatDate(d) {
 }
 
 async function renderHolidays() {
-  const holidays = getHolidays();
+  const holidays = await getHolidays();
   const el = document.getElementById('holidayList');
   el.innerHTML = '';
   if (!holidays.length) {
@@ -1009,26 +1021,22 @@ async function renderHolidays() {
   });
 }
 
-function addHoliday() {
+async function handleAddHoliday() {
   const date = document.getElementById('holidayDate').value;
   const reason = document.getElementById('holidayReason').value.trim();
   if (!date) { toast('\u26A0\uFE0F','Select a date','Please pick a holiday date','error'); return; }
-  const holidays = getHolidays();
-  if (holidays.some(h => h.date === date)) { toast('\u26A0\uFE0F','Already set','This date is already a holiday','error'); return; }
-  holidays.push({ date, reason: reason || 'Closure' });
-  setLocal('holidays', holidays);
+  const added = await addHoliday(date, reason);
+  if (!added) { toast('\u26A0\uFE0F','Already set','This date is already a holiday','error'); return; }
   document.getElementById('holidayDate').value = '';
   document.getElementById('holidayReason').value = '';
-  renderHolidays();
+  await renderHolidays();
   toast('\u2705','Holiday Added',htmlEscape(formatDate(date)) + ' marked as holiday');
 }
 
-function deleteHoliday(date) {
+async function handleDeleteHoliday(date) {
   if (!confirm('Remove holiday on ' + formatDate(date) + '?')) return;
-  let holidays = getHolidays();
-  holidays = holidays.filter(h => h.date !== date);
-  setLocal('holidays', holidays);
-  renderHolidays();
+  await removeHoliday(date);
+  await renderHolidays();
   toast('\uD83D\uDDD1\uFE0F','Removed',htmlEscape(formatDate(date)) + ' is no longer a holiday');
 }
 
@@ -1104,7 +1112,7 @@ async function runDataCleanup() {
     toast('\u2705','Cleanup Complete',patientsDeleted + ' patients and ' + appointmentsDeleted + ' appointments removed');
     await refreshAll();
   } catch (e) {
-    console.error('Cleanup error:', e);
+    devError('Cleanup error:', e);
     toast('\u274C','Cleanup Failed','An error occurred during cleanup');
   }
 }
@@ -1153,25 +1161,20 @@ async function exportAllData() {
     
     toast('\u2705','Export Complete','Backup downloaded successfully');
   } catch (e) {
-    console.error('Export error:', e);
+    devError('Export error:', e);
     toast('\u274C','Export Failed','An error occurred during export');
   }
 }
 
 function exportPatientsCSV() {
-  try {
-    let patients;
-    if (SupabaseDB.isConfigured()) {
-      SupabaseDB.getPatients().then(p => {
-        patients = p;
-        downloadPatientsCSV(patients);
-      });
-    } else {
-      patients = getLocal('patients');
-      downloadPatientsCSV(patients);
-    }
-  } catch (e) {
-    toast('\u274C','Export Failed','An error occurred');
+  if (SupabaseDB.isConfigured()) {
+    SupabaseDB.getPatients().then(p => {
+      downloadPatientsCSV(p);
+    }).catch(e => {
+      toast('\u274C','Export Failed', sanitizeErrorMessage(e) || 'Could not fetch patients');
+    });
+  } else {
+    downloadPatientsCSV(getLocal('patients'));
   }
 }
 
@@ -1187,19 +1190,14 @@ function downloadPatientsCSV(patients) {
 }
 
 function exportAppointmentsCSV() {
-  try {
-    let appointments;
-    if (SupabaseDB.isConfigured()) {
-      SupabaseDB.getAppointments().then(a => {
-        appointments = a;
-        downloadAppointmentsCSV(appointments);
-      });
-    } else {
-      appointments = getLocal('appointments');
-      downloadAppointmentsCSV(appointments);
-    }
-  } catch (e) {
-    toast('\u274C','Export Failed','An error occurred');
+  if (SupabaseDB.isConfigured()) {
+    SupabaseDB.getAppointments().then(a => {
+      downloadAppointmentsCSV(a);
+    }).catch(e => {
+      toast('\u274C','Export Failed', sanitizeErrorMessage(e) || 'Could not fetch appointments');
+    });
+  } else {
+    downloadAppointmentsCSV(getLocal('appointments'));
   }
 }
 
@@ -1232,7 +1230,9 @@ async function refreshAll() {
       if (remoteOPGs.length > 0) {
         localStorage.removeItem('pd_opg_reports');
       }
-    } catch (_) {}
+    } catch (e) {
+      devWarn('OPG sync check failed:', e.message || e);
+    }
   }
   await renderOverview();
   const today = new Date();
@@ -1247,6 +1247,7 @@ async function refreshAll() {
   try {
     await seedData();
   } catch (e) {
-    console.error('Error initializing data:', e);
+    devError('Error initializing data:', e);
+    toast('\u26A0\uFE0F','Data Init', 'Could not load seed data. Some features may be limited.');
   }
 })();

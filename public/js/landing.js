@@ -24,7 +24,7 @@ async function updateSlotAvailability() {
       const remote = await SupabaseDB.getAppointments();
       remote.filter(a => a.date === date).forEach(a => bookedTimes.add(a.time));
     } catch (e) {
-      console.warn('Could not fetch remote appointments:', e.message);
+      devWarn('Could not fetch remote appointments:', e.message);
       const localAppts = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
       localAppts.filter(a => a.date === date).forEach(a => bookedTimes.add(a.time));
     }
@@ -105,6 +105,25 @@ async function submitBooking() {
   }
   try {
     checkRateLimit();
+
+    const bookedTimes = new Set();
+    if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
+      try {
+        const remote = await SupabaseDB.getAppointments();
+        remote.filter(a => a.date === booking.date).forEach(a => bookedTimes.add(a.time));
+      } catch (e) {
+        const localAppts = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
+        localAppts.filter(a => a.date === booking.date).forEach(a => bookedTimes.add(a.time));
+      }
+    } else {
+      const localAppts = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
+      localAppts.filter(a => a.date === booking.date).forEach(a => bookedTimes.add(a.time));
+    }
+    if (bookedTimes.has(booking.time)) {
+      showToast('\u274C','Slot Taken','This slot was just booked by someone else. Please go back and choose another time.');
+      return;
+    }
+
     const submitBtn = document.querySelector('#step4 .btn-next');
     submitBtn.innerHTML = '\u23F3 Submitting...';
     submitBtn.disabled = true;
@@ -156,7 +175,7 @@ async function submitBooking() {
           consentText: 'Patient consented to data collection for appointment scheduling and treatment purposes'
         });
       } catch (e) {
-        console.error('Booking save failed:', e);
+        devError('Booking save failed:', e);
         throw new Error('Could not save booking. Please try again or contact us directly.');
       }
     } else {
@@ -186,7 +205,7 @@ async function submitBooking() {
     updateSlotAvailability();
     setTimeout(() => resetBooking(), 5000);
   } catch (error) {
-    console.error('Error saving appointment:', error);
+    devError('Error saving appointment:', error);
     showToast('\u274C','Booking Failed',error.message || 'Please try again or contact us directly');
   } finally {
     const submitBtn = document.querySelector('#step4 .btn-next');

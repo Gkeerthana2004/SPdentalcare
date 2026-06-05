@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS public.appointments (
   status TEXT DEFAULT 'Pending',
   visittype TEXT,
   notes TEXT,
-  created TIMESTAMPTZ DEFAULT NOW()
+  created TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT unique_appointment_slot UNIQUE (date, time)
 );
 
 -- Orthodontics table
@@ -186,6 +187,37 @@ CREATE POLICY "Doctors can insert audit logs"
   WITH CHECK (auth.role() = 'authenticated');
 
 GRANT INSERT, SELECT ON public.audit_logs TO authenticated;
+
+-- =============================================================
+-- Clinic Holidays table (controls booking availability)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS public.clinic_holidays (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  date DATE UNIQUE NOT NULL,
+  reason TEXT DEFAULT 'Closure',
+  created TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.clinic_holidays ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view holidays"
+  ON public.clinic_holidays FOR SELECT
+  USING (true);
+
+CREATE POLICY "Doctors can manage holidays"
+  ON public.clinic_holidays FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Doctors can update holidays"
+  ON public.clinic_holidays FOR UPDATE
+  USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Doctors can delete holidays"
+  ON public.clinic_holidays FOR DELETE
+  USING (auth.role() = 'authenticated');
+
+GRANT SELECT ON public.clinic_holidays TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.clinic_holidays TO authenticated;
 
 -- =============================================================
 -- Patient Consent table (track consent for data collection)

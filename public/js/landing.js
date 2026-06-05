@@ -240,10 +240,22 @@ window.addEventListener('scroll', () => {
 });
 
 document.getElementById('hamburger').addEventListener('click', () => {
-  document.getElementById('mobileNav').classList.add('open');
+  const nav = document.getElementById('mobileNav');
+  nav.classList.add('open');
+  document.getElementById('hamburger').setAttribute('aria-expanded', 'true');
+  nav.querySelector('a')?.focus();
 });
 document.getElementById('mobileClose').addEventListener('click', closeMobileNav);
-function closeMobileNav() { document.getElementById('mobileNav').classList.remove('open'); }
+function closeMobileNav() {
+  document.getElementById('mobileNav').classList.remove('open');
+  document.getElementById('hamburger').setAttribute('aria-expanded', 'false');
+  document.getElementById('hamburger').focus();
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('mobileNav').classList.contains('open')) {
+    closeMobileNav();
+  }
+});
 
 const today = new Date();
 const todayStr = today.toISOString().split('T')[0];

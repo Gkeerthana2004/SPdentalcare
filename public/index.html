@@ -105,9 +105,9 @@
 
 <!-- NAV -->
 <nav id="navbar" aria-label="Main navigation">
-  <a href="#" class="logo">
-    <div class="logo-icon">🦷</div>
-    <span>SP Dental Care</span>
+  <a href="#" class="logo" aria-label="SP Dental Care - Home">
+    <div class="logo-icon" aria-hidden="true">🦷</div>
+    SP<span>Dental Care</span>
   </a>
   <ul class="nav-links">
     <li><a href="#services">Services</a></li>
@@ -115,7 +115,7 @@
     <li><a href="#gallery">Gallery</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#booking" class="nav-cta">Book Appointment</a></li>
-    <li><a href="dashboard.html" class="nav-login" title="Doctor Login" rel="noopener">🔐</a></li>
+    <li><a href="dashboard.html" class="nav-login" title="Doctor Login" aria-label="Doctor Login" rel="noopener">🔐</a></li>
   </ul>
   <div class="hamburger" id="hamburger" role="button" aria-label="Toggle navigation menu" aria-expanded="false" tabindex="0">
     <span></span><span></span><span></span>
@@ -124,7 +124,7 @@
 
 <!-- MOBILE NAV -->
 <div class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
-  <button class="mobile-close" id="mobileClose">✕</button>
+  <button class="mobile-close" id="mobileClose" aria-label="Close navigation menu">✕</button>
   <a href="#services" onclick="closeMobileNav()">Services</a>
   <a href="#doctors" onclick="closeMobileNav()">Doctors</a>
   <a href="#gallery" onclick="closeMobileNav()">Gallery</a>
@@ -162,7 +162,7 @@
         <div class="stat-label">Years Experience</div>
       </div>
       <div class="stat-item">
-        <div class="stat-num">4.9<span>★</span></div>
+        <div class="stat-num">4.9<span aria-hidden="true">★</span></div>
         <div class="stat-label">Average Rating</div>
       </div>
     </div>
@@ -175,7 +175,7 @@
         <p>Premium Dental Services</p>
       </div>
       <div class="floating-card fc-1">
-        <div class="fc-stars">★★★★★</div>
+        <div class="fc-stars" aria-label="5 out of 5 stars" aria-hidden="true">★★★★★</div>
         <div class="fc-text">"Best dental experience!"</div>
         <div class="fc-text" style="margin-top:4px; font-size:11px;">— Sarah K.</div>
       </div>
@@ -713,7 +713,7 @@
       </div>
       <div class="review-card reveal">
         <div class="review-header">
-          <div class="review-stars">★★★★★</div>
+          <div class="review-stars" aria-label="5 out of 5 stars" aria-hidden="true">★★★★★</div>
           <div class="review-source">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm5.23 11.23c0 .28-.22.5-.5.5H3.27c-.28 0-.5-.22-.5-.5V4.27c0-.28.22-.5.5-.5h9.46c.28 0 .5.22.5.5v6.96zm-7.46-1.27c0-.41.34-.75.75-.75s.75.34.75.75-.34.75-.75.75-.75-.34-.75-.75zm3.5 0c0-.41.34-.75.75-.75s.75.34.75.75-.34.75-.75.75-.75-.34-.75-.75zM6.5 7.5c0-.28.22-.5.5-.5s.5.22.5.5-.22.5-.5.5-.5-.22-.5-.5zm3 0c0-.28.22-.5.5-.5s.5.22.5.5-.22.5-.5.5-.5-.22-.5-.5zm3 0c0-.28.22-.5.5-.5s.5.22.5.5-.22.5-.5.5-.5-.22-.5-.5z" fill="#4285F4"/></svg>
             Google Review
@@ -748,15 +748,15 @@
   <div class="footer-layout">
     <div class="footer-brand">
       <a href="#" class="logo">
-        <div class="logo-icon">🦷</div>
+        <div class="logo-icon" aria-hidden="true">🦷</div>
         SP<span>Dental Care</span>
       </a>
       <p>Chennai's most trusted premium dental clinic. Delivering exceptional smiles through advanced care and technology since 2018.</p>
       <div class="social-links" style="margin-top:24px;">
-        <a class="social-btn" href="#" title="Facebook">f</a>
-        <a class="social-btn" href="#" title="Instagram">📷</a>
-        <a class="social-btn" href="#" title="Twitter">𝕏</a>
-        <a class="social-btn" href="#" title="YouTube">▶</a>
+        <a class="social-btn" href="#" aria-label="Facebook" title="Facebook">f</a>
+        <a class="social-btn" href="#" aria-label="Instagram" title="Instagram">📷</a>
+        <a class="social-btn" href="#" aria-label="Twitter" title="Twitter">𝕏</a>
+        <a class="social-btn" href="#" aria-label="YouTube" title="YouTube">▶</a>
       </div>
     </div>
     <div class="footer-col">
@@ -811,22 +811,22 @@
 </div>
 
 <!-- CHATBOT FLOATING BUTTON -->
-<div id="chatFab" onclick="toggleChat()" title="Book appointment with chat" role="button" aria-label="Open chat assistant" tabindex="0">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+<div id="chatFab" onclick="toggleChat()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleChat()}" title="Book appointment with chat" role="button" aria-label="Open chat assistant" tabindex="0">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
   <span class="chat-fab-text">Chat</span>
 </div>
 
 <!-- CHATBOT WIDGET -->
-<div id="chatWidget">
+<div id="chatWidget" role="dialog" aria-label="Chat assistant">
   <div id="chatHeader">
-    <div class="ch-av">🦷</div>
+    <div class="ch-av" aria-hidden="true">🦷</div>
     <div class="ch-info">
       <div class="ch-title">SP Dental Care</div>
       <div class="ch-status">Online · Book in 2 min</div>
     </div>
-    <button class="ch-close" onclick="toggleChat()">✕</button>
+    <button class="ch-close" onclick="toggleChat()" aria-label="Close chat">✕</button>
   </div>
-  <div id="chatBody"></div>
+  <div id="chatBody" aria-live="polite" role="log"></div>
 </div>
 
 <!-- WHATSAPP FLOATING BUTTON -->

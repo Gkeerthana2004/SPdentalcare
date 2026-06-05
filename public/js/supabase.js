@@ -7,6 +7,15 @@ function devLog(...args) { if (DEBUG) console.log('[SP]', ...args); }
 function devWarn(...args) { if (DEBUG) console.warn('[SP]', ...args); }
 function devError(...args) { if (DEBUG) console.error('[SP]', ...args); }
 
+if (!crypto.randomUUID) {
+  crypto.randomUUID = function() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+}
+
 let supabaseClient = null;
 let isSupabaseConfigured = false;
 let currentSession = null;

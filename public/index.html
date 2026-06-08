@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SP Dental Care | Premium Dental Clinic in Chennai | Book Appointment</title>
 <meta name="description" content="SP Dental Care - Chennai's trusted premium dental clinic offering general check-ups, dental implants, orthodontics, root canal, braces & more. Book appointments online. Open 5 PM - 9 PM daily.">
-<meta name="keywords" content="dental clinic Chennai, dentist near me, dental implants, orthodontics, braces, root canal, teeth cleaning, SP Dental Care, Kattankulathur dentist">
 <meta name="author" content="SP Dental Care">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://spdentalcare.in/">
@@ -16,6 +15,9 @@
 <meta property="og:title" content="SP Dental Care | Premium Dental Clinic in Chennai">
 <meta property="og:description" content="Chennai's trusted premium dental clinic offering general check-ups, dental implants, orthodontics, root canal, braces & more. Book appointments online.">
 <meta property="og:image" content="https://spdentalcare.in/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SP Dental Care - Premium Dental Clinic in Chennai">
 <meta property="og:locale" content="en_IN">
 <meta property="og:site_name" content="SP Dental Care">
 
@@ -25,6 +27,7 @@
 <meta name="twitter:title" content="SP Dental Care | Premium Dental Clinic in Chennai">
 <meta name="twitter:description" content="Chennai's trusted premium dental clinic offering general check-ups, dental implants, orthodontics, root canal, braces & more.">
 <meta name="twitter:image" content="https://spdentalcare.in/og-image.png">
+<meta name="twitter:image:alt" content="SP Dental Care - Premium Dental Clinic in Chennai">
 
 <!-- Geo -->
 <meta name="geo.region" content="IN-TN">
@@ -44,17 +47,16 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/landing.css">
-<script src="js/supabase.min.js"></script>
 
 <!-- Structured Data - LocalBusiness -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Dentist",
+  "@type": ["Dentist", "MedicalBusiness"],
   "name": "SP Dental Care",
   "description": "Premium dental clinic in Chennai offering general check-ups, dental implants, orthodontics, root canal, braces and more.",
   "url": "https://spdentalcare.in",
-  "telephone": "+919176640037",
+  "telephone": "+91-91766-40037",
   "email": "spdentalcare2018@gmail.com",
   "address": {
     "@type": "PostalAddress",
@@ -82,14 +84,91 @@
   "aggregateRating": {
     "@type": "AggregateRating",
     "ratingValue": "4.9",
-    "reviewCount": "500"
+    "reviewCount": "500",
+    "bestRating": "5"
   },
+  "review": [
+    {
+      "@type": "Review",
+      "author": {"@type": "Person", "name": "Meenakshi Sundaram"},
+      "reviewBody": "SP Dental Care gave me back my confidence. The veneers look absolutely natural and the whole process was so comfortable.",
+      "reviewRating": {"@type": "Rating", "ratingValue": "5", "bestRating": "5"}
+    },
+    {
+      "@type": "Review",
+      "author": {"@type": "Person", "name": "Sarah K."},
+      "reviewBody": "Best dental experience! The team is incredibly professional and caring.",
+      "reviewRating": {"@type": "Rating", "ratingValue": "5", "bestRating": "5"}
+    }
+  ],
   "hasMap": "https://maps.app.goo.gl/yggotZLo7CVqgWr48",
-  "medicalSpecialty": ["Dentistry","Orthodontics","Oral Surgery","Periodontics","Endodontics"],
+  "medicalSpecialty": ["DentalSpecialty", "Orthodontics", "OralSurgery", "Periodontics", "Endodontics"],
   "founder": {
     "@type": "Person",
     "name": "Dr. Saranya Mohan"
-  }
+  },
+  "areaServed": {
+    "@type": "City",
+    "name": "Chennai",
+    "containedInPlace": {
+      "@type": "State",
+      "name": "Tamil Nadu"
+    }
+  },
+  "availableService": [
+    {"@type": "MedicalProcedure", "name": "General Check-up"},
+    {"@type": "MedicalProcedure", "name": "Dental Implants"},
+    {"@type": "MedicalProcedure", "name": "Root Canal Treatment"},
+    {"@type": "MedicalProcedure", "name": "Orthodontics"},
+    {"@type": "MedicalProcedure", "name": "Dental Filling"},
+    {"@type": "MedicalProcedure", "name": "Scaling"},
+    {"@type": "MedicalProcedure", "name": "Wisdom Tooth Removal"}
+  ],
+  "sameAs": [
+    "https://www.instagram.com/spdentalcare",
+    "https://www.facebook.com/spdentalcare"
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What are the clinic hours at SP Dental Care?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SP Dental Care is open every day from 5:00 PM to 9:00 PM, including weekends. We are located at No 6, Bharathiyar St, Potheri, Kattankulathur, Chennai."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I book an appointment at SP Dental Care?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You can book an appointment online through our website at spdentalcare.in, call us at +91 91766 40037, or send us a message on WhatsApp. Online booking takes less than 2 minutes."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does SP Dental Care accept dental insurance?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, we accept most major dental insurance plans. Please bring your insurance card to your appointment. Contact us at +91 91766 40037 to verify your specific plan."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Where is SP Dental Care located?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SP Dental Care is located at No 6, Bharathiyar St, Potheri, Kattankulathur, Tamil Nadu 603203. We are near Potheri signal and easily accessible by road."
+      }
+    }
+  ]
 }
 </script>
 </head>
@@ -365,7 +444,7 @@
           <div class="form-group" style="margin-top:8px">
             <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;line-height:1.4;color:var(--text-muted)">
               <input type="checkbox" id="consentCheck" style="margin-top:2px;flex-shrink:0">
-              <span>I consent to SP Dental Care collecting and storing my personal and health information for appointment scheduling and treatment purposes. I understand my data will be handled as per the <a href="privacy.html" target="_blank" style="color:var(--teal);text-decoration:underline">Privacy Policy</a>.</span>
+              <span>I consent to SP Dental Care collecting and storing my personal and health information for appointment scheduling and treatment purposes. I understand my data will be handled as per the <a href="privacy.html" target="_blank" rel="noopener noreferrer" style="color:var(--teal);text-decoration:underline">Privacy Policy</a>.</span>
             </label>
           </div>
           <div class="form-nav">
@@ -579,7 +658,7 @@
       <div class="doctor-exp">BDS, MDS · 3 years experience</div>
     </div>
     <!-- Duplicate set for seamless loop -->
-    <div class="doctor-card" onclick="location.href='#booking'">
+    <div class="doctor-card" aria-hidden="true" onclick="location.href='#booking'">
       <div class="doctor-avatar">
         <div class="doctor-emoji">👨‍⚕️</div>
         <div class="doctor-overlay">
@@ -743,7 +822,6 @@
 
 </main>
 
-<!-- FOOTER -->
 <footer>
   <div class="footer-layout">
     <div class="footer-brand">
@@ -753,10 +831,8 @@
       </a>
       <p>Chennai's most trusted premium dental clinic. Delivering exceptional smiles through advanced care and technology since 2018.</p>
       <div class="social-links" style="margin-top:24px;">
-        <a class="social-btn" href="#" aria-label="Facebook" title="Facebook">f</a>
-        <a class="social-btn" href="#" aria-label="Instagram" title="Instagram">📷</a>
-        <a class="social-btn" href="#" aria-label="Twitter" title="Twitter">𝕏</a>
-        <a class="social-btn" href="#" aria-label="YouTube" title="YouTube">▶</a>
+        <a class="social-btn" href="https://www.facebook.com/spdentalcare" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook">f</a>
+        <a class="social-btn" href="https://www.instagram.com/spdentalcare" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">📷</a>
       </div>
     </div>
     <div class="footer-col">
@@ -783,10 +859,8 @@
     <div class="footer-col">
       <h4>Patient Info</h4>
       <ul>
-        <li><a href="#">New Patient Guide</a></li>
-        <li><a href="#">Insurance Plans</a></li>
-        <li><a href="#">EMI Options</a></li>
-        <li><a href="#">Patient Rights</a></li>
+        <li><a href="#booking">Book Appointment</a></li>
+        <li><a href="#contact">Contact Us</a></li>
         <li><a href="privacy.html">Privacy Policy</a></li>
       </ul>
     </div>
@@ -835,6 +909,12 @@
   <span class="whatsapp-text">Chat with us</span>
 </a>
 
+<noscript>
+<div style="background:#1a1612;color:#F59E0B;padding:16px 24px;text-align:center;font-size:14px;border-bottom:1px solid rgba(245,158,11,0.3);">
+  JavaScript is required to book appointments. Please call <a href="tel:+919176640037" style="color:#2DD4BF">+91 91766 40037</a> to book directly.
+</div>
+</noscript>
+
 <script>
 // Show notice if Supabase is not configured
 window.addEventListener('load', () => {
@@ -844,10 +924,11 @@ window.addEventListener('load', () => {
 });
 </script>
 
-  <script src="js/supabase-config.js?v=5.0"></script>
-  <script src="js/supabase.js?v=5.0"></script>
-  <script src="js/landing.js?v=5.0"></script>
-  <script src="js/chatbot.js?v=1.0"></script>
+  <script src="js/supabase.min.js" defer></script>
+  <script src="js/supabase-config.js?v=5.0" defer></script>
+  <script src="js/supabase.js?v=5.0" defer></script>
+  <script src="js/landing.js?v=5.0" defer></script>
+  <script src="js/chatbot.js?v=1.0" defer></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});

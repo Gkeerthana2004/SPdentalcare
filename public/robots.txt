@@ -8,4 +8,4 @@ Disallow: /db/
 Disallow: /scripts/
 
 # Sitemaps
-Sitemap: https://spdentalcare.netlify.app/sitemap.xml
+Sitemap: https://spdentalcare.in/sitemap.xml

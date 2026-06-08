@@ -1,5 +1,19 @@
 const booking = { service:'', date:'', time:'', doctor:'', name:'', phone:'', email:'', age:'', visitType:'', concern:'' };
 let currentStep = 1;
+let availableDoctors = [];
+
+async function loadDoctors() {
+  if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
+    try {
+      const docs = await SupabaseDB.getDoctors();
+      availableDoctors = docs.map(d => d.display_name).filter(Boolean);
+    } catch (e) {
+      devWarn('Could not fetch doctors:', e.message);
+      availableDoctors = ['Dr. Saranya Mohan'];
+    }
+  }
+  if (!availableDoctors.length) availableDoctors = ['Dr. Saranya Mohan'];
+}
 
 function selectOpt(el, groupId) {
   document.querySelectorAll('#' + groupId + ' .service-opt, #' + groupId + ' .doc-opt').forEach(e => e.classList.remove('selected'));
@@ -19,18 +33,11 @@ async function updateSlotAvailability() {
   const date = document.getElementById('apptDate').value;
   if (!date) return;
   const bookedTimes = new Set();
-  if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
-    try {
-      const remote = await SupabaseDB.getAppointments();
-      remote.filter(a => a.date === date).forEach(a => bookedTimes.add(a.time));
-    } catch (e) {
-      devWarn('Could not fetch remote appointments:', e.message);
-      const localAppts = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-      localAppts.filter(a => a.date === date).forEach(a => bookedTimes.add(a.time));
-    }
-  } else {
-    const localAppts = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-    localAppts.filter(a => a.date === date).forEach(a => bookedTimes.add(a.time));
+  try {
+    const remote = await SupabaseDB.getAppointments();
+    remote.filter(a => a.date === date).forEach(a => bookedTimes.add(a.time));
+  } catch (e) {
+    devWarn('Could not fetch appointments:', e.message);
   }
   document.querySelectorAll('.time-slot').forEach(slot => {
     const time = slot.textContent.trim();
@@ -67,7 +74,8 @@ async function nextStep(step) {
     }
   }
   if (step === 3) {
-    booking.doctor = 'Dr. Saranya Mohan';
+    if (!availableDoctors.length) await loadDoctors();
+    booking.doctor = availableDoctors[0] || 'Dr. Saranya Mohan';
   }
   showStep(step +1);
 }
@@ -107,17 +115,11 @@ async function submitBooking() {
     checkRateLimit();
 
     const bookedTimes = new Set();
-    if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
-      try {
-        const remote = await SupabaseDB.getAppointments();
-        remote.filter(a => a.date === booking.date).forEach(a => bookedTimes.add(a.time));
-      } catch (e) {
-        const localAppts = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-        localAppts.filter(a => a.date === booking.date).forEach(a => bookedTimes.add(a.time));
-      }
-    } else {
-      const localAppts = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-      localAppts.filter(a => a.date === booking.date).forEach(a => bookedTimes.add(a.time));
+    try {
+      const remote = await SupabaseDB.getAppointments();
+      remote.filter(a => a.date === booking.date).forEach(a => bookedTimes.add(a.time));
+    } catch (e) {
+      devWarn('Could not fetch appointments:', e.message);
     }
     if (bookedTimes.has(booking.time)) {
       showToast('\u274C','Slot Taken','This slot was just booked by someone else. Please go back and choose another time.');
@@ -179,22 +181,7 @@ async function submitBooking() {
         throw new Error('Could not save booking. Please try again or contact us directly.');
       }
     } else {
-      const localAppts = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-      localAppts.unshift(appointmentData);
-      localStorage.setItem('pd_appointments', JSON.stringify(localAppts));
-      const localPatients = JSON.parse(localStorage.getItem('pd_patients') || '[]');
-      if (!localPatients.find(p => p.phone === booking.phone)) {
-        const patientId = 'PD-' + crypto.randomUUID().slice(0, 8);
-        const patientData = {
-          id: patientId, name: sanitizeName(booking.name),
-          dob: null, gender: null, blood: null,
-          phone: sanitizePhone(booking.phone), email: sanitizeEmail(booking.email), address: null,
-          treatment: booking.service, doctor: booking.doctor || 'Any Available Doctor',
-          history: null, notes: String(booking.concern || '').trim(), created: new Date().toISOString()
-        };
-        localPatients.unshift(patientData);
-        localStorage.setItem('pd_patients', JSON.stringify(localPatients));
-      }
+      throw new Error('Database not configured. Please contact the clinic directly.');
     }
 
     const fmtDate = booking.date ? new Date(booking.date).toLocaleDateString('en-IN', {weekday:'long', day:'numeric', month:'long', year:'numeric'}) : 'Not specified';
@@ -259,31 +246,31 @@ document.addEventListener('keydown', e => {
 
 const today = new Date();
 const todayStr = today.toISOString().split('T')[0];
-const holidayToday = (typeof isHoliday === 'function' && isHoliday(todayStr))
-  ? (JSON.parse(localStorage.getItem('pd_holidays')||'[]')).find(h => h.date === todayStr) : null;
 
 document.getElementById('apptDate').min = todayStr;
 
-if (holidayToday) {
-  document.getElementById('apptDate').value = '';
-  document.getElementById('bookingHolidayMsg').style.display = 'flex';
-  document.getElementById('holidayMsgText').textContent = holidayToday.reason
-    ? 'Today is a holiday (' + holidayToday.reason + ')' : 'Today is a holiday';
-
-  document.getElementById('siteHolidayBanner').style.display = 'block';
-  document.getElementById('siteHolidayMsg').textContent = '\uD83C\uDF89 Today is a holiday (' + (holidayToday.reason || 'Holiday') + ').';
-  document.getElementById('navbar').style.top = '46px';
-
-  const waBtn = document.getElementById('whatsappBtn');
-  if (waBtn) {
-    const msg = 'Hi%20SP%20Dental%20Care!%20I%20saw%20you%27re%20closed%20today%20(' + encodeURIComponent(holidayToday.reason || 'Holiday') + ').%20Can%20I%20book%20for%20another%20day%3F';
-    waBtn.href = 'https://wa.me/' + CLINIC_WHATSAPP + '?text=' + msg;
-    waBtn.title = 'Closed today \u2014 message us to book another day';
+(async () => {
+  const holidays = await getHolidays();
+  const holidayToday = holidays.find(h => h.date === todayStr);
+  if (holidayToday) {
+    document.getElementById('apptDate').value = '';
+    document.getElementById('bookingHolidayMsg').style.display = 'flex';
+    document.getElementById('holidayMsgText').textContent = holidayToday.reason
+      ? 'Today is a holiday (' + holidayToday.reason + ')' : 'Today is a holiday';
+    document.getElementById('siteHolidayBanner').style.display = 'block';
+    document.getElementById('siteHolidayMsg').textContent = '\uD83C\uDF89 Today is a holiday (' + (holidayToday.reason || 'Holiday') + ').';
+    document.getElementById('navbar').style.top = '46px';
+    const waBtn = document.getElementById('whatsappBtn');
+    if (waBtn) {
+      const msg = 'Hi%20SP%20Dental%20Care!%20I%20saw%20you%27re%20closed%20today%20(' + encodeURIComponent(holidayToday.reason || 'Holiday') + ').%20Can%20I%20book%20for%20another%20day%3F';
+      waBtn.href = 'https://wa.me/' + CLINIC_WHATSAPP + '?text=' + msg;
+      waBtn.title = 'Closed today \u2014 message us to book another day';
+    }
+  } else {
+    document.getElementById('apptDate').value = todayStr;
+    document.getElementById('navbar').style.top = '0';
   }
-} else {
-  document.getElementById('apptDate').value = todayStr;
-  document.getElementById('navbar').style.top = '0';
-}
+})();
 document.getElementById('apptDate').addEventListener('change', () => {
   booking.time = '';
   const val = document.getElementById('apptDate').value;
@@ -302,3 +289,5 @@ const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
 }, { threshold:0.12 });
 revealEls.forEach(el => observer.observe(el));
+
+loadDoctors();

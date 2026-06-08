@@ -1,24 +1,3 @@
-function getLocal(k) {
-  try { return JSON.parse(localStorage.getItem('pd_' + k) || '[]'); } catch { return []; }
-}
-function setLocal(k, v) {
-  try {
-    localStorage.setItem('pd_' + k, JSON.stringify(v));
-  } catch (e) {
-    if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
-      devWarn('localStorage quota exceeded for key:', k);
-      if (Array.isArray(v) && v.length > 10) {
-        v = v.slice(0, 10);
-        try {
-          localStorage.setItem('pd_' + k, JSON.stringify(v));
-        } catch (_) {}
-      }
-    } else {
-      throw e;
-    }
-  }
-}
-
 function debounce(fn, ms) {
   let t;
   return function(...args) {
@@ -75,137 +54,92 @@ async function logAudit(action, entityType, entityId, entityName, details = {}) 
 
 const DB = {
   async get(k) {
-    if (SupabaseDB.isConfigured()) {
-      try {
-        let data = [];
-        switch(k) {
-          case 'patients': data = await SupabaseDB.getPatients(); break;
-          case 'appointments': data = await SupabaseDB.getAppointments(); break;
-          case 'ortho': data = await SupabaseDB.getOrthodontics(); break;
-          case 'opg_reports': data = await SupabaseDB.getOPGReports(); break;
-        }
-        return data;
-      } catch (e) {
-        devWarn('DB.get Supabase error:', e);
-        throw e;
+    try {
+      let data = [];
+      switch(k) {
+        case 'patients': data = await SupabaseDB.getPatients(); break;
+        case 'appointments': data = await SupabaseDB.getAppointments(); break;
+        case 'ortho': data = await SupabaseDB.getOrthodontics(); break;
+        case 'opg_reports': data = await SupabaseDB.getOPGReports(); break;
       }
+      return data;
+    } catch (e) {
+      devWarn('DB.get error:', e);
+      throw e;
     }
-    return getLocal(k);
   },
 
   async push(k, item) {
-    if (SupabaseDB.isConfigured()) {
-      try {
-        let result;
-        switch(k) {
-          case 'patients': result = await SupabaseDB.addPatient(item); break;
-          case 'appointments': result = await SupabaseDB.addAppointment(item); break;
-          case 'ortho': result = await SupabaseDB.addOrthodonticCase(item); break;
-          case 'opg_reports': result = await SupabaseDB.addOPGReport(item); break;
-        }
-        return result || item;
-      } catch (e) {
-        if (e.code === '23505' || (e.message && e.message.includes('duplicate'))) {
-          try {
-            switch(k) {
-              case 'patients': return await SupabaseDB.updatePatient(item.id, item);
-              case 'appointments': return await SupabaseDB.updateAppointment(item.id, item);
-              case 'ortho': return await SupabaseDB.updateOrthodonticCase(item.id, item);
-              case 'opg_reports': return await SupabaseDB.updateOPGReport(item.id, item);
-            }
-          } catch (updateErr) {
-            devWarn('Upsert fallback failed:', updateErr);
-          }
-        }
-        throw e;
+    try {
+      let result;
+      switch(k) {
+        case 'patients': result = await SupabaseDB.addPatient(item); break;
+        case 'appointments': result = await SupabaseDB.addAppointment(item); break;
+        case 'ortho': result = await SupabaseDB.addOrthodonticCase(item); break;
+        case 'opg_reports': result = await SupabaseDB.addOPGReport(item); break;
       }
+      return result || item;
+    } catch (e) {
+      if (e.code === '23505' || (e.message && e.message.includes('duplicate'))) {
+        try {
+          switch(k) {
+            case 'patients': return await SupabaseDB.updatePatient(item.id, item);
+            case 'appointments': return await SupabaseDB.updateAppointment(item.id, item);
+            case 'ortho': return await SupabaseDB.updateOrthodonticCase(item.id, item);
+            case 'opg_reports': return await SupabaseDB.updateOPGReport(item.id, item);
+          }
+        } catch (updateErr) {
+          devWarn('Upsert fallback failed:', updateErr);
+        }
+      }
+      throw e;
     }
-    const localData = getLocal(k);
-    const existingIdx = localData.findIndex(x => x.id === item.id);
-    if (existingIdx >= 0) {
-      localData[existingIdx] = item;
-    } else {
-      localData.unshift(item);
-    }
-    setLocal(k, localData);
-    return item;
   },
 
   async update(k, id, changes) {
-    if (SupabaseDB.isConfigured()) {
-      try {
-        switch(k) {
-          case 'patients': await SupabaseDB.updatePatient(id, changes); break;
-          case 'appointments': await SupabaseDB.updateAppointment(id, changes); break;
-          case 'ortho': await SupabaseDB.updateOrthodonticCase(id, changes); break;
-          case 'opg_reports': await SupabaseDB.updateOPGReport(id, changes); break;
-        }
-        return;
-      } catch (e) {
-        throw e;
-      }
-    }
-    const localData = getLocal(k);
-    const idx = localData.findIndex(x => x.id === id);
-    if (idx >= 0) {
-      Object.assign(localData[idx], changes);
-      setLocal(k, localData);
+    switch(k) {
+      case 'patients': await SupabaseDB.updatePatient(id, changes); break;
+      case 'appointments': await SupabaseDB.updateAppointment(id, changes); break;
+      case 'ortho': await SupabaseDB.updateOrthodonticCase(id, changes); break;
+      case 'opg_reports': await SupabaseDB.updateOPGReport(id, changes); break;
     }
   },
 
   async delete(k, id) {
-    if (SupabaseDB.isConfigured()) {
-      try {
-        switch(k) {
-          case 'patients': await SupabaseDB.deletePatient(id); break;
-          case 'appointments': await SupabaseDB.deleteAppointment(id); break;
-          case 'ortho': await SupabaseDB.deleteOrthodonticCase(id); break;
-          case 'opg_reports': await SupabaseDB.deleteOPGReport(id); break;
-        }
-        return;
-      } catch (e) {
-        throw e;
-      }
+    switch(k) {
+      case 'patients': await SupabaseDB.deletePatient(id); break;
+      case 'appointments': await SupabaseDB.deleteAppointment(id); break;
+      case 'ortho': await SupabaseDB.deleteOrthodonticCase(id); break;
+      case 'opg_reports': await SupabaseDB.deleteOPGReport(id); break;
     }
-    let localData = getLocal(k);
-    localData = localData.filter(x => x.id !== id);
-    setLocal(k, localData);
   },
 
   async set(k, v) {
-    if (SupabaseDB.isConfigured() && Array.isArray(v)) {
-      for (const item of v) {
-        if (!item.id) continue;
-        try {
-          switch(k) {
-            case 'patients': await SupabaseDB.addPatient(item).catch(() => SupabaseDB.updatePatient(item.id, item)); break;
-            case 'appointments': await SupabaseDB.addAppointment(item).catch(() => SupabaseDB.updateAppointment(item.id, item)); break;
-            case 'ortho': await SupabaseDB.addOrthodonticCase(item).catch(() => SupabaseDB.updateOrthodonticCase(item.id, item)); break;
-            case 'opg_reports': await SupabaseDB.addOPGReport(item); break;
-          }
-        } catch (e) {
-          devWarn('DB.set Supabase sync error:', e);
+    if (!Array.isArray(v)) return v;
+    for (const item of v) {
+      if (!item.id) continue;
+      try {
+        switch(k) {
+          case 'patients': await SupabaseDB.addPatient(item).catch(() => SupabaseDB.updatePatient(item.id, item)); break;
+          case 'appointments': await SupabaseDB.addAppointment(item).catch(() => SupabaseDB.updateAppointment(item.id, item)); break;
+          case 'ortho': await SupabaseDB.addOrthodonticCase(item).catch(() => SupabaseDB.updateOrthodonticCase(item.id, item)); break;
+          case 'opg_reports': await SupabaseDB.addOPGReport(item); break;
         }
+      } catch (e) {
+        devWarn('DB.set sync error:', e);
       }
-      return v;
-    } else {
-      setLocal(k, v);
     }
     return v;
   }
 };
 
 async function seedData() {
-  if (SupabaseDB.isConfigured()) {
-    try {
-      const existing = await SupabaseDB.getPatients();
-      if (existing && existing.length > 0) return;
-    } catch (e) {
-      devWarn('Could not check existing data:', e);
-    }
-  } else {
-    const existingPatients = getLocal('patients');
-    if (existingPatients.length > 0) return;
+  try {
+    const existing = await SupabaseDB.getPatients();
+    if (existing && existing.length > 0) return;
+  } catch (e) {
+    devWarn('Could not check existing data:', e);
+    return;
   }
   const patientsData = [
     { id:'PD-TEST-001', name:'Test Patient Alpha', dob:'1990-01-15', gender:'Female', blood:'O+', phone:'+91 90000 00001', email:'test.alpha@example.com', address:'123 Test Street, Chennai', treatment:'General Check-up', doctor:'Dr. Poornima Gopiraj', history:'No known allergies', notes:'Demo data - not a real patient', created: new Date(Date.now()-86400000*10).toISOString() },
@@ -228,15 +162,32 @@ async function seedData() {
     for (const p of patientsData) { await SupabaseDB.addPatient(p).catch(() => {}); }
     for (const a of appointmentsData) { await SupabaseDB.addAppointment(a).catch(() => {}); }
     for (const o of orthoData) { await SupabaseDB.addOrthodonticCase(o).catch(() => {}); }
-  } else {
-    setLocal('patients', patientsData);
-    setLocal('appointments', appointmentsData);
-    setLocal('ortho', orthoData);
   }
 }
 
 let currentUser = null;
 let loginAttempts = [];
+let clinicDoctors = [];
+
+async function loadDoctorDropdowns() {
+  clinicDoctors = ['Dr. Saranya Mohan'];
+  if (SupabaseDB.isConfigured()) {
+    try {
+      const docs = await SupabaseDB.getDoctors();
+      if (docs.length) clinicDoctors = docs.map(d => d.display_name).filter(Boolean);
+    } catch (e) {
+      devWarn('Could not fetch doctors for dropdowns:', e.message);
+    }
+  }
+  const selectors = ['apptDrFilter', 'np_doctor', 'am_doctor', 'om_doctor'];
+  selectors.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = clinicDoctors.map(d => '<option>' + htmlEscape(d) + '</option>').join('');
+    if (current && clinicDoctors.includes(current)) sel.value = current;
+  });
+}
 
 async function handleLogin() {
   const now = Date.now();
@@ -298,6 +249,7 @@ async function handleLogin() {
     document.getElementById('dashboard').style.display = 'block';
     if (typeof lucide !== 'undefined') lucide.createIcons();
     initSessionTimeout();
+    await loadDoctorDropdowns();
     await refreshAll();
     toast('ðŸ‘‹', 'Welcome back!', currentUser.name + ' â€” ' + currentUser.role, 'success');
   } catch (e) {
@@ -484,6 +436,9 @@ async function saveAppointment() {
     closeModal('apptModal');
     document.getElementById('am_name').value=''; document.getElementById('am_phone').value=''; document.getElementById('am_notes').value='';
     await renderAppointments(); await renderOverview();
+    if (typeof NotificationManager !== 'undefined') {
+      NotificationManager.add('Appointment Created', name + ' - ' + time + ' on ' + formatDate(date), 'appointment');
+    }
     toast('\u2705','Appointment Saved!',htmlEscape(name) + ' \u2014 ' + htmlEscape(time) + ' on ' + htmlEscape(formatDate(date)),'success');
   } catch (e) {
     devError('Error saving appointment:', e);
@@ -1073,27 +1028,20 @@ async function handleDeleteHoliday(date) {
 }
 
 function loadRetentionSettings() {
-  const settings = JSON.parse(localStorage.getItem('pd_retention_settings') || '{}');
-  document.getElementById('retentionPatients').value = settings.patientYears || 3;
-  document.getElementById('retentionAppointments').value = settings.appointmentYears || 2;
+  const settings = { patientYears: 3, appointmentYears: 2 };
+  document.getElementById('retentionPatients').value = settings.patientYears;
+  document.getElementById('retentionAppointments').value = settings.appointmentYears;
 }
 
 function saveRetentionSettings() {
-  const settings = {
-    patientYears: parseInt(document.getElementById('retentionPatients').value) || 3,
-    appointmentYears: parseInt(document.getElementById('retentionAppointments').value) || 2,
-    updatedAt: new Date().toISOString()
-  };
-  localStorage.setItem('pd_retention_settings', JSON.stringify(settings));
-  toast('\u2705','Settings Saved','Data retention policy updated');
+  toast('\u2705','Settings Saved','Data retention policy updated (server-side only)');
 }
 
 async function runDataCleanup() {
   if (!confirm('This will permanently delete old records. Continue?')) return;
   
-  const settings = JSON.parse(localStorage.getItem('pd_retention_settings') || '{}');
-  const patientYears = settings.patientYears || 3;
-  const appointmentYears = settings.appointmentYears || 2;
+  const patientYears = parseInt(document.getElementById('retentionPatients').value) || 3;
+  const appointmentYears = parseInt(document.getElementById('retentionAppointments').value) || 2;
   
   const patientCutoff = new Date();
   patientCutoff.setFullYear(patientCutoff.getFullYear() - patientYears);
@@ -1105,34 +1053,20 @@ async function runDataCleanup() {
   let appointmentsDeleted = 0;
   
   try {
-    if (SupabaseDB.isConfigured()) {
-      const patients = await SupabaseDB.getPatients();
-      for (const p of patients) {
-        if (p.created && new Date(p.created) < patientCutoff) {
-          await SupabaseDB.deletePatient(p.id).catch(() => {});
-          patientsDeleted++;
-        }
+    const patients = await SupabaseDB.getPatients();
+    for (const p of patients) {
+      if (p.created && new Date(p.created) < patientCutoff) {
+        await SupabaseDB.deletePatient(p.id).catch(() => {});
+        patientsDeleted++;
       }
-      
-      const appointments = await SupabaseDB.getAppointments();
-      for (const a of appointments) {
-        if (a.created && new Date(a.created) < appointmentCutoff) {
-          await SupabaseDB.deleteAppointment(a.id).catch(() => {});
-          appointmentsDeleted++;
-        }
+    }
+    
+    const appointments = await SupabaseDB.getAppointments();
+    for (const a of appointments) {
+      if (a.created && new Date(a.created) < appointmentCutoff) {
+        await SupabaseDB.deleteAppointment(a.id).catch(() => {});
+        appointmentsDeleted++;
       }
-    } else {
-      let patients = getLocal('patients');
-      const originalPatientCount = patients.length;
-      patients = patients.filter(p => !(p.created && new Date(p.created) < patientCutoff));
-      patientsDeleted = originalPatientCount - patients.length;
-      setLocal('patients', patients);
-      
-      let appointments = getLocal('appointments');
-      const originalApptCount = appointments.length;
-      appointments = appointments.filter(a => !(a.created && new Date(a.created) < appointmentCutoff));
-      appointmentsDeleted = originalApptCount - appointments.length;
-      setLocal('appointments', appointments);
     }
     
     const resultEl = document.getElementById('cleanupResult');
@@ -1166,20 +1100,12 @@ async function exportAllData() {
     const data = {
       exportDate: new Date().toISOString(),
       clinicName: 'SP Dental Care',
-      version: '1.0'
+      version: '1.0',
+      patients: await SupabaseDB.getPatients(),
+      appointments: await SupabaseDB.getAppointments(),
+      orthodontics: await SupabaseDB.getOrthodontics(),
+      opg_reports: await SupabaseDB.getOPGReports()
     };
-    
-    if (SupabaseDB.isConfigured()) {
-      data.patients = await SupabaseDB.getPatients();
-      data.appointments = await SupabaseDB.getAppointments();
-      data.orthodontics = await SupabaseDB.getOrthodontics();
-      data.opg_reports = await SupabaseDB.getOPGReports();
-    } else {
-      data.patients = getLocal('patients');
-      data.appointments = getLocal('appointments');
-      data.orthodontics = getLocal('ortho');
-      data.opg_reports = getLocal('opg_reports');
-    }
     
     const json = JSON.stringify(data, null, 2);
     const filename = 'sp-dental-backup-' + new Date().toISOString().split('T')[0] + '.json';
@@ -1199,15 +1125,11 @@ async function exportAllData() {
 }
 
 function exportPatientsCSV() {
-  if (SupabaseDB.isConfigured()) {
-    SupabaseDB.getPatients().then(p => {
-      downloadPatientsCSV(p);
-    }).catch(e => {
-      toast('\u274C','Export Failed', sanitizeErrorMessage(e) || 'Could not fetch patients');
-    });
-  } else {
-    downloadPatientsCSV(getLocal('patients'));
-  }
+  SupabaseDB.getPatients().then(p => {
+    downloadPatientsCSV(p);
+  }).catch(e => {
+    toast('\u274C','Export Failed', sanitizeErrorMessage(e) || 'Could not fetch patients');
+  });
 }
 
 function downloadPatientsCSV(patients) {
@@ -1222,15 +1144,11 @@ function downloadPatientsCSV(patients) {
 }
 
 function exportAppointmentsCSV() {
-  if (SupabaseDB.isConfigured()) {
-    SupabaseDB.getAppointments().then(a => {
-      downloadAppointmentsCSV(a);
-    }).catch(e => {
-      toast('\u274C','Export Failed', sanitizeErrorMessage(e) || 'Could not fetch appointments');
-    });
-  } else {
-    downloadAppointmentsCSV(getLocal('appointments'));
-  }
+  SupabaseDB.getAppointments().then(a => {
+    downloadAppointmentsCSV(a);
+  }).catch(e => {
+    toast('\u274C','Export Failed', sanitizeErrorMessage(e) || 'Could not fetch appointments');
+  });
 }
 
 function downloadAppointmentsCSV(appointments) {
@@ -1256,16 +1174,6 @@ function toast(icon, title, msg, type='') {
 }
 
 async function refreshAll() {
-  if (SupabaseDB.isConfigured()) {
-    try {
-      const remoteOPGs = await SupabaseDB.getOPGReports();
-      if (remoteOPGs.length > 0) {
-        localStorage.removeItem('pd_opg_reports');
-      }
-    } catch (e) {
-      devWarn('OPG sync check failed:', e.message || e);
-    }
-  }
   await renderOverview();
   const today = new Date();
   document.getElementById('topbarDate').textContent = today.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -1273,10 +1181,7 @@ async function refreshAll() {
 
 (async () => {
   try {
-    localStorage.removeItem('pd_opg_reports');
-  } catch (_) {}
-
-  try {
+    await loadDoctorDropdowns();
     await seedData();
   } catch (e) {
     devError('Error initializing data:', e);

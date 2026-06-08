@@ -4,9 +4,19 @@ const chatServices = [
   'Clear Aligners', 'Child Dental Care', 'Wisdom Tooth Removal'
 ];
 
-const chatDoctors = [
-  'Dr. Saranya Mohan'
-];
+let chatDoctors = [];
+
+async function loadChatDoctors() {
+  if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
+    try {
+      const docs = await SupabaseDB.getDoctors();
+      chatDoctors = docs.map(d => d.display_name).filter(Boolean);
+    } catch (e) {
+      chatDoctors = ['Dr. Saranya Mohan'];
+    }
+  }
+  if (!chatDoctors.length) chatDoctors = ['Dr. Saranya Mohan'];
+}
 
 const chatTimes = ['5:00 PM','5:30 PM','6:00 PM','6:30 PM','7:00 PM','7:30 PM','8:00 PM','8:30 PM','9:00 PM'];
 
@@ -16,10 +26,11 @@ function toggleChat() {
   const el = document.getElementById('chatWidget');
   el.classList.toggle('open');
   if (el.classList.contains('open') && !chatState.step) {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const holiday = (typeof isHoliday === 'function' && isHoliday(todayStr))
-      ? (JSON.parse(localStorage.getItem('pd_holidays')||'[]')).find(h => h.date === todayStr)
-      : null;
+    loadChatDoctors();
+    (async () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const holidays = await getHolidays();
+      const holiday = holidays.find(h => h.date === todayStr);
     if (holiday) {
       setTimeout(() => addChatMsg('bot', '\uD83C\uDF89 <b>Notice:</b> The clinic is closed today' + (holiday.reason ? ' (' + htmlEscape(holiday.reason) + ')' : '') + '.<br>Please select a different date to book.'), 300);
       setTimeout(() => addChatMsg('bot', 'What service are you looking for?'), 900);
@@ -30,6 +41,7 @@ function toggleChat() {
       setTimeout(() => showChatOptions(chatServices, 'service'), 1300);
     }
     chatState.step = 1;
+    })();
   }
 }
 
@@ -68,7 +80,7 @@ function showChatOptions(options, key) {
   body.scrollTop = body.scrollHeight;
 }
 
-function showChatDatePicker() {
+async function showChatDatePicker() {
   const body = document.getElementById('chatBody');
   const d = document.createElement('div');
   d.className = 'chat-options';
@@ -78,7 +90,8 @@ function showChatDatePicker() {
   const todayDate = new Date();
   inp.min = todayDate.toISOString().split('T')[0];
   const todayStr = todayDate.toISOString().split('T')[0];
-  if (typeof isHoliday === 'function' && isHoliday(todayStr)) {
+  const holidays = await getHolidays();
+  if (holidays.some(h => h.date === todayStr)) {
     const next = new Date(todayDate); next.setDate(next.getDate() + 1);
     inp.value = next.toISOString().split('T')[0];
   } else {
@@ -87,9 +100,10 @@ function showChatDatePicker() {
   const btn = document.createElement('button');
   btn.className = 'chat-opt-btn';
   btn.textContent = '\u2713 Select Date';
-  btn.onclick = () => {
+  btn.onclick = async () => {
     if (!inp.value) return;
-    if (typeof isHoliday === 'function' && isHoliday(inp.value)) {
+    const hols = await getHolidays();
+    if (hols.some(h => h.date === inp.value)) {
       addChatMsg('bot', '\u274C <b>Closure Notice</b><br>Sorry, the clinic is closed on this date. Please pick another day.');
       inp.value = '';
       return;
@@ -108,17 +122,11 @@ function showChatTimeSlots() {
   d.className = 'chat-options';
   const booked = new Set();
   const loadSlots = async () => {
-    if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
-      try {
-        const remote = await SupabaseDB.getAppointments();
-        remote.filter(a => a.date === chatState.data.date).forEach(a => booked.add(a.time));
-      } catch (e) {
-        const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-        local.filter(a => a.date === chatState.data.date).forEach(a => booked.add(a.time));
-      }
-    } else {
-      const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-      local.filter(a => a.date === chatState.data.date).forEach(a => booked.add(a.time));
+    try {
+      const remote = await SupabaseDB.getAppointments();
+      remote.filter(a => a.date === chatState.data.date).forEach(a => booked.add(a.time));
+    } catch (e) {
+      devWarn('Could not fetch appointments:', e.message);
     }
     chatTimes.forEach(t => {
       const past2h = isSlotPast2Hours(t, chatState.data.date);
@@ -250,17 +258,11 @@ async function submitChatBooking() {
     checkRateLimit();
 
     const bookedTimes = new Set();
-    if (typeof SupabaseDB !== 'undefined' && SupabaseDB.isConfigured()) {
-      try {
-        const remote = await SupabaseDB.getAppointments();
-        remote.filter(a => a.date === chatState.data.date).forEach(a => bookedTimes.add(a.time));
-      } catch (e) {
-        const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-        local.filter(a => a.date === chatState.data.date).forEach(a => bookedTimes.add(a.time));
-      }
-    } else {
-      const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-      local.filter(a => a.date === chatState.data.date).forEach(a => bookedTimes.add(a.time));
+    try {
+      const remote = await SupabaseDB.getAppointments();
+      remote.filter(a => a.date === chatState.data.date).forEach(a => bookedTimes.add(a.time));
+    } catch (e) {
+      devWarn('Could not fetch appointments:', e.message);
     }
     if (bookedTimes.has(chatState.data.time)) {
       addChatMsg('bot', '\u274C Sorry, that slot was just booked by someone else. Please go back and choose another time.');
@@ -307,14 +309,7 @@ async function submitChatBooking() {
         throw new Error('Could not save booking. Please try again.');
       }
     } else {
-      const local = JSON.parse(localStorage.getItem('pd_appointments') || '[]');
-      local.unshift(apt);
-      localStorage.setItem('pd_appointments', JSON.stringify(local));
-      const existing = JSON.parse(localStorage.getItem('pd_patients') || '[]');
-      if (!existing.find(p => p.phone === d.phone)) {
-        existing.unshift({ id:'PD-'+crypto.randomUUID().slice(0, 8), name:sanitizeName(d.name), phone:sanitizePhone(d.phone), email:'', treatment:d.service, doctor:d.doctor, notes:'', created:new Date().toISOString() });
-        localStorage.setItem('pd_patients', JSON.stringify(existing));
-      }
+      throw new Error('Database not configured. Please contact the clinic directly.');
     }
 
     document.querySelectorAll('.chat-options').forEach(el => el.remove());

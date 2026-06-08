@@ -8,23 +8,23 @@
 <meta name="keywords" content="dental clinic Chennai, dentist near me, dental implants, orthodontics, braces, root canal, teeth cleaning, SP Dental Care, Kattankulathur dentist">
 <meta name="author" content="SP Dental Care">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://spdentalcare.netlify.app/">
+<link rel="canonical" href="https://spdentalcare.in/">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://spdentalcare.netlify.app/">
+<meta property="og:url" content="https://spdentalcare.in/">
 <meta property="og:title" content="SP Dental Care | Premium Dental Clinic in Chennai">
 <meta property="og:description" content="Chennai's trusted premium dental clinic offering general check-ups, dental implants, orthodontics, root canal, braces & more. Book appointments online.">
-<meta property="og:image" content="https://spdentalcare.netlify.app/og-image.png">
+<meta property="og:image" content="https://spdentalcare.in/og-image.png">
 <meta property="og:locale" content="en_IN">
 <meta property="og:site_name" content="SP Dental Care">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:url" content="https://spdentalcare.netlify.app/">
+<meta name="twitter:url" content="https://spdentalcare.in/">
 <meta name="twitter:title" content="SP Dental Care | Premium Dental Clinic in Chennai">
 <meta name="twitter:description" content="Chennai's trusted premium dental clinic offering general check-ups, dental implants, orthodontics, root canal, braces & more.">
-<meta name="twitter:image" content="https://spdentalcare.netlify.app/og-image.png">
+<meta name="twitter:image" content="https://spdentalcare.in/og-image.png">
 
 <!-- Geo -->
 <meta name="geo.region" content="IN-TN">
@@ -53,7 +53,7 @@
   "@type": "Dentist",
   "name": "SP Dental Care",
   "description": "Premium dental clinic in Chennai offering general check-ups, dental implants, orthodontics, root canal, braces and more.",
-  "url": "https://spdentalcare.netlify.app",
+  "url": "https://spdentalcare.in",
   "telephone": "+919176640037",
   "email": "spdentalcare2018@gmail.com",
   "address": {
@@ -78,7 +78,7 @@
     }
   ],
   "priceRange": "$$",
-  "image": "https://spdentalcare.netlify.app/og-image.png",
+  "image": "https://spdentalcare.in/og-image.png",
   "aggregateRating": {
     "@type": "AggregateRating",
     "ratingValue": "4.9",
@@ -848,5 +848,10 @@ window.addEventListener('load', () => {
   <script src="js/supabase.js?v=5.0"></script>
   <script src="js/landing.js?v=5.0"></script>
   <script src="js/chatbot.js?v=1.0"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
 </body>
 </html>

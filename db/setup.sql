@@ -15,6 +15,18 @@ CREATE TABLE IF NOT EXISTS public.doctors (
 
 ALTER TABLE public.doctors ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Anyone can view doctors"
+  ON public.doctors FOR SELECT
+  USING (true);
+
+CREATE POLICY "Doctors can manage profiles"
+  ON public.doctors FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Doctors can update profiles"
+  ON public.doctors FOR UPDATE
+  USING (auth.role() = 'authenticated');
+
 -- Patients table
 CREATE TABLE IF NOT EXISTS public.patients (
   id TEXT PRIMARY KEY,
@@ -248,6 +260,7 @@ GRANT INSERT, SELECT ON public.patient_consents TO authenticated;
 -- Grant access to Data API
 -- =============================================================
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT SELECT ON public.doctors TO anon, authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
 GRANT INSERT ON public.appointments TO anon;
 GRANT INSERT ON public.patient_consents TO anon;

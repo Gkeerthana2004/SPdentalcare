@@ -335,6 +335,13 @@ const SupabaseDB = {
     }
   },
 
+  async getDoctors() {
+    if (!supabaseClient) throw new Error('Supabase not configured');
+    const { data, error } = await supabaseClient.from('doctors').select('*').order('display_name', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
   async getAuditLogs(limit = 100) {
     if (!supabaseClient) throw new Error('Supabase not configured');
     const { data, error } = await supabaseClient.from('audit_logs').select('*').order('created', { ascending: false }).limit(limit);
@@ -387,56 +394,45 @@ const SupabaseDB = {
   }
 };
 
-function getLocalHolidays() {
-  try { return JSON.parse(localStorage.getItem('pd_holidays') || '[]'); } catch { return []; }
-}
-
 async function getHolidays() {
   if (supabaseClient) {
     try {
       const { data, error } = await supabaseClient.from('clinic_holidays').select('*').order('date', { ascending: true });
       if (!error && data) {
-        const holidays = data.map(h => ({ date: h.date, reason: h.reason }));
-        localStorage.setItem('pd_holidays', JSON.stringify(holidays));
-        return holidays;
+        return data.map(h => ({ date: h.date, reason: h.reason }));
       }
     } catch (e) {
-      devWarn('Holiday fetch failed, using local:', e.message || e);
+      devWarn('Holiday fetch failed:', e.message || e);
     }
   }
-  return getLocalHolidays();
+  return [];
 }
 
 async function addHoliday(date, reason) {
-  const holidays = getLocalHolidays();
-  if (holidays.some(h => h.date === date)) return false;
-  holidays.push({ date, reason: reason || 'Closure' });
-  localStorage.setItem('pd_holidays', JSON.stringify(holidays));
-  if (supabaseClient) {
-    try {
-      await supabaseClient.from('clinic_holidays').upsert([{ date, reason: reason || 'Closure' }], { onConflict: 'date' });
-    } catch (e) {
-      devWarn('Holiday sync failed:', e.message || e);
-    }
+  if (!supabaseClient) throw new Error('Supabase not configured');
+  try {
+    const { error } = await supabaseClient.from('clinic_holidays').upsert([{ date, reason: reason || 'Closure' }], { onConflict: 'date' });
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    devWarn('Holiday add failed:', e.message || e);
+    return false;
   }
-  return true;
 }
 
 async function removeHoliday(date) {
-  let holidays = getLocalHolidays();
-  holidays = holidays.filter(h => h.date !== date);
-  localStorage.setItem('pd_holidays', JSON.stringify(holidays));
-  if (supabaseClient) {
-    try {
-      await supabaseClient.from('clinic_holidays').delete().eq('date', date);
-    } catch (e) {
-      devWarn('Holiday sync failed:', e.message || e);
-    }
+  if (!supabaseClient) throw new Error('Supabase not configured');
+  try {
+    const { error } = await supabaseClient.from('clinic_holidays').delete().eq('date', date);
+    if (error) throw error;
+  } catch (e) {
+    devWarn('Holiday remove failed:', e.message || e);
   }
 }
 
 function isHoliday(dateStr) {
-  return getLocalHolidays().some(h => h.date === dateStr);
+  devWarn('isHoliday called synchronously - use getHolidays() instead for Supabase-backed data');
+  return false;
 }
 window.getHolidays = getHolidays;
 window.isHoliday = isHoliday;

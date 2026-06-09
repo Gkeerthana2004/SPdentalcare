@@ -265,11 +265,11 @@ nav.scrolled { padding: 14px 60px; box-shadow: var(--shadow-sm); }
 }
 .hero-card-main h3 {
   font-family: 'Cormorant Garamond', serif;
-  color: var(--white); font-size: 22px; font-weight: 400;
+  color: var(--white); font-size: 30px; font-weight: 600;
   letter-spacing: 1px;
 }
 .hero-card-main p {
-  color: rgba(255,255,255,0.6); font-size: 13px; margin-top: 8px;
+  color: rgba(255,255,255,0.6); font-size: 16px; margin-top: 8px; font-weight: 600;
 }
 
 .floating-card {

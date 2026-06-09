@@ -1,4 +1,4 @@
-function debounce(fn, ms) {
+﻿function debounce(fn, ms) {
   let t;
   return function(...args) {
     clearTimeout(t);
@@ -239,7 +239,7 @@ async function handleLogin() {
       email: result.user.email,
       name: result.user.user_metadata?.display_name || result.user.email?.split('@')[0] || 'Doctor',
       role: result.user.user_metadata?.role || 'Doctor',
-      avatar: result.user.user_metadata?.avatar || 'ðŸ‘¨â€âš•ï¸'
+      avatar: result.user.user_metadata?.avatar || '👨‍⚕️'
     };
     document.getElementById('loginErr').style.display = 'none';
     document.getElementById('sbDocName').textContent = currentUser.name;
@@ -251,7 +251,7 @@ async function handleLogin() {
     initSessionTimeout();
     await loadDoctorDropdowns();
     await refreshAll();
-    toast('ðŸ‘‹', 'Welcome back!', currentUser.name + ' â€” ' + currentUser.role, 'success');
+    toast('👋', 'Welcome back!', currentUser.name + ' — ' + currentUser.role, 'success');
   } catch (e) {
     if (e.message && e.message.includes('Invalid login credentials')) {
       showLoginError('Invalid email or password. Please try again.');
@@ -353,7 +353,7 @@ async function showPage(id, el) {
   document.getElementById('page-'+id).classList.add('active');
   if (el) el.classList.add('active');
   const titles = { overview:'Overview Dashboard', appointments:'Appointment Management', patients:'Patient Records', ortho:'Ortho Treatment Tracker', 'add-patient':'Add New Patient', holidays:'Clinic Holidays', settings:'Data Settings' };
-  const icons = { overview:'ðŸ“Š', appointments:'ðŸ“…', patients:'ðŸ‘¥', ortho:'ðŸ˜', 'add-patient':'âž•', holidays:'ðŸŽ‰', settings:'âš™ï¸' };
+    const icons = { overview:'📊', appointments:'📅', patients:'👥', ortho:'😁', 'add-patient':'➕', holidays:'🎉', settings:'⚙️' };
   const t = titles[id] || id;
   document.getElementById('pageTitle').innerHTML = icons[id] ? htmlEscape(icons[id]) + ' <span style="font-style:italic;color:var(--teal)">' + htmlEscape(t.split(' ').slice(-1)[0]) + '</span> ' + htmlEscape(t.split(' ').slice(0,-1).join(' ')) : htmlEscape(t);
   if (id==='appointments') await renderAppointments();

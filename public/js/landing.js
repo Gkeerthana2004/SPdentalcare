@@ -18,8 +18,13 @@ async function loadDoctors() {
 function selectOpt(el, groupId) {
   document.querySelectorAll('#' + groupId + ' .service-opt, #' + groupId + ' .doc-opt').forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
-  if (groupId === 'serviceOptions') booking.service = el.dataset.val;
-  if (groupId === 'doctorOptions') booking.doctor = el.dataset.val;
+  if (groupId === 'serviceOptions') {
+    booking.service = el.dataset.val;
+    setTimeout(() => nextStep(1), 300);
+  }
+  if (groupId === 'doctorOptions') {
+    booking.doctor = el.dataset.val;
+  }
 }
 
 function selectSlot(el) {
@@ -27,6 +32,9 @@ function selectSlot(el) {
   document.querySelectorAll('.time-slot').forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
   booking.time = el.textContent.trim();
+  setTimeout(() => {
+    document.getElementById('step2').querySelector('.form-nav').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 300);
 }
 
 async function updateSlotAvailability() {
@@ -73,10 +81,6 @@ async function nextStep(step) {
       return;
     }
   }
-  if (step === 3) {
-    if (!availableDoctors.length) await loadDoctors();
-    booking.doctor = availableDoctors[0] || 'Dr. Saranya Mohan';
-  }
   showStep(step +1);
 }
 
@@ -85,7 +89,7 @@ function prevStep(step) { showStep(step -1); }
 function showStep(n) {
   document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
   document.getElementById('step' + n).classList.add('active');
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= 3; i++) {
     const p = document.getElementById('ps' + i);
     p.classList.remove('active','done');
     if (i < n) p.classList.add('done');
@@ -93,6 +97,7 @@ function showStep(n) {
   }
   currentStep = n;
   if (n === 2) updateSlotAvailability();
+  document.getElementById('step' + n).scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 async function submitBooking() {
@@ -126,7 +131,7 @@ async function submitBooking() {
       return;
     }
 
-    const submitBtn = document.querySelector('#step4 .btn-next');
+    const submitBtn = document.querySelector('#step3 .btn-next');
     submitBtn.innerHTML = '\u23F3 Submitting...';
     submitBtn.disabled = true;
 
@@ -195,7 +200,7 @@ async function submitBooking() {
     devError('Error saving appointment:', error);
     showToast('\u274C','Booking Failed',error.message || 'Please try again or contact us directly');
   } finally {
-    const submitBtn = document.querySelector('#step4 .btn-next');
+    const submitBtn = document.querySelector('#step3 .btn-next');
     if (submitBtn) {
       submitBtn.innerHTML = '\u2713 Confirm Booking';
       submitBtn.disabled = false;
@@ -281,6 +286,9 @@ document.getElementById('apptDate').addEventListener('change', () => {
     return;
   }
   updateSlotAvailability();
+  setTimeout(() => {
+    document.getElementById('timeSlots').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 200);
 });
 setTimeout(updateSlotAvailability, 500);
 

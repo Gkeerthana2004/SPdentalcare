@@ -285,6 +285,7 @@ nav.scrolled { padding: 14px 60px; box-shadow: var(--shadow-sm); }
 }
 .fc-1 { top: -20px; left: -40px; animation-delay: -2s; }
 .fc-2 { top: 140px; right: -60px; animation-delay: -3s; }
+.fc-3 { bottom: -10px; right: -30px; left: auto; animation-delay: -4s; }
 .fc-stars { color: var(--gold); font-size: 14px; letter-spacing: 2px; }
 .fc-text { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .fc-bold { font-size: 14px; font-weight: 600; color: var(--deep); }
@@ -456,26 +457,14 @@ section { padding: 100px 60px; }
   box-shadow: 0 8px 24px rgba(201,168,76,0.2);
 }
 
-.doctor-emoji {
-  font-size: 56px;
+.doctor-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
   transition: transform 0.3s ease;
 }
-.doctor-card:hover .doctor-emoji { transform: scale(1.1); }
-
-.doctor-overlay {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  background: linear-gradient(transparent, rgba(26,22,18,0.8));
-  padding: 24px 16px 16px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-.doctor-card:hover .doctor-overlay { opacity: 1; }
-
-.doctor-overlay .btn-primary {
-  width: 100%; justify-content: center;
-  padding: 10px 20px; font-size: 13px; border-radius: 12px;
-}
+.doctor-card:hover .doctor-avatar img { transform: scale(1.1); }
 
 .doctor-name {
   font-family: 'Cormorant Garamond', serif;
